@@ -2,16 +2,16 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
+  Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SlidersHorizontal, ChevronDown, Check, Sparkles } from 'lucide-react-native';
+import { SlidersHorizontal, ChevronDown, Check, Sparkles, X } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { SearchBar } from './SearchBar';
 import { PLATFORM_TABS, type PlatformType } from '../../utils/helpers';
 import type { UserPlanInfo } from '../../types/bookmark';
 
@@ -34,22 +34,14 @@ export const Header: React.FC<HeaderProps> = ({
   onResetPlatforms,
   platformCounts,
   planInfo,
-  onOpenSettings,
 }) => {
-  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [dropdownTop, setDropdownTop] = useState(110);
+  const [dropdownTop, setDropdownTop] = useState(100);
   const filterBtnRef = useRef<View>(null);
 
   const isFiltered =
     selectedPlatforms.length > 0 && !selectedPlatforms.includes('all');
-
-  const filterButtonLabel = !isFiltered
-    ? 'Filter'
-    : selectedPlatforms.length === 1
-    ? PLATFORM_TABS.find((t) => t.id === selectedPlatforms[0])?.label || 'Filter'
-    : `Filters (${selectedPlatforms.length})`;
 
   const handleOpenDropdown = () => {
     if (filterBtnRef.current) {
@@ -66,106 +58,63 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: colors.background,
-            borderBottomColor: colors.borderLight,
-          },
-        ]}
-      >
-        {/* Row 1: Search Bar (Full Width) */}
-        <View style={styles.searchRow}>
-          <SearchBar value={searchTerm} onChangeText={onSearchChange} />
-        </View>
-
-        {/* Row 2: Tokens (Left) and Multi-Select Filter Button (Right) */}
-        <View style={styles.controlsRow}>
-          {/* Left: Remaining AI Tokens */}
-          <TouchableOpacity
+      {/* Top Search Bar Row (Matching Figma Design) */}
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Left: Serif Italic Search Input */}
+        <View style={styles.searchInputWrap}>
+          <TextInput
             style={[
-              styles.tokenBadge,
+              styles.searchInput,
               {
-                backgroundColor: isDark
-                  ? 'rgba(200, 142, 62, 0.12)'
-                  : 'rgba(181, 129, 76, 0.08)',
-                borderColor: isDark
-                  ? 'rgba(200, 142, 62, 0.25)'
-                  : 'rgba(181, 129, 76, 0.22)',
+                color: colors.textHeading,
+                fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
               },
             ]}
-            onPress={onOpenSettings}
-            activeOpacity={0.7}
-            accessibilityLabel="Remaining AI tokens"
-          >
-            <Sparkles size={12} color={colors.primary} />
-            <Text style={[styles.tokenText, { color: colors.primary }]}>
-              {planInfo?.credits_remaining ?? 0} AI tokens
-            </Text>
-          </TouchableOpacity>
-
-          {/* Right: Multi-Select Filter Button */}
-          <View ref={filterBtnRef} collapsable={false}>
+            value={searchTerm}
+            onChangeText={onSearchChange}
+            placeholder="Search your mind..."
+            placeholderTextColor={
+              isDark ? 'rgba(126, 117, 105, 0.65)' : 'rgba(140, 131, 119, 0.65)'
+            }
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="never"
+          />
+          {searchTerm.length > 0 && (
             <TouchableOpacity
-              style={[
-                styles.filterButton,
-                {
-                  backgroundColor: isFiltered
-                    ? isDark
-                      ? 'rgba(200, 142, 62, 0.18)'
-                      : 'rgba(181, 129, 76, 0.14)'
-                    : isDark
-                    ? 'rgba(38, 33, 28, 0.65)'
-                    : 'rgba(255, 255, 255, 0.85)',
-                  borderColor: isFiltered
-                    ? colors.primary
-                    : isDark
-                    ? 'rgba(60, 52, 44, 0.7)'
-                    : 'rgba(235, 229, 220, 0.9)',
-                },
-              ]}
-              onPress={handleOpenDropdown}
-              activeOpacity={0.75}
-              accessibilityLabel="Filter bookmarks by platform"
+              onPress={() => onSearchChange('')}
+              style={styles.clearBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Clear search"
               accessibilityRole="button"
             >
-              <SlidersHorizontal
-                size={13}
-                color={isFiltered ? colors.primary : colors.textBody}
-                strokeWidth={2}
-              />
-              <Text
-                style={[
-                  styles.filterButtonText,
-                  {
-                    color: isFiltered ? colors.primary : colors.textHeading,
-                    fontWeight: isFiltered ? '700' : '600',
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {filterButtonLabel}
-              </Text>
-              <ChevronDown
-                size={12}
-                color={isFiltered ? colors.primary : colors.textMuted}
-                strokeWidth={2.2}
-              />
-              {isFiltered && (
-                <View
-                  style={[
-                    styles.filterActiveDot,
-                    { backgroundColor: colors.primary },
-                  ]}
-                />
-              )}
+              <X size={16} color={colors.textMuted} strokeWidth={2.2} />
             </TouchableOpacity>
-          </View>
+          )}
+        </View>
+
+        {/* Right: Circular Filter Button (from Figma) */}
+        <View ref={filterBtnRef} collapsable={false}>
+          <TouchableOpacity
+            style={[
+              styles.filterCircleBtn,
+              {
+                backgroundColor: colors.primary,
+                shadowColor: colors.primary,
+              },
+            ]}
+            onPress={handleOpenDropdown}
+            activeOpacity={0.82}
+            accessibilityLabel="Filter bookmarks by platform"
+            accessibilityRole="button"
+          >
+            <SlidersHorizontal size={17} color="#FFFFFF" strokeWidth={2.3} />
+            {isFiltered && <View style={styles.activeDot} />}
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Multi-Select Filter Dropdown Modal */}
+      {/* Multi-Select Platform Filter Dropdown Modal */}
       <Modal
         visible={isFilterDropdownOpen}
         transparent={true}
@@ -189,16 +138,34 @@ export const Header: React.FC<HeaderProps> = ({
               },
             ]}
           >
-            {/* Header */}
+            {/* Header with Tokens Indicator and Reset */}
             <View style={styles.dropdownHeader}>
-              <Text
-                style={[
-                  styles.dropdownHeaderText,
-                  { color: colors.textMuted },
-                ]}
-              >
-                Filter by Platform
-              </Text>
+              <View style={styles.headerTitleRow}>
+                <Text
+                  style={[
+                    styles.dropdownHeaderText,
+                    { color: colors.textMuted },
+                  ]}
+                >
+                  Filter by Platform
+                </Text>
+                <View
+                  style={[
+                    styles.tokenChip,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(200, 142, 62, 0.12)'
+                        : 'rgba(181, 129, 76, 0.08)',
+                    },
+                  ]}
+                >
+                  <Sparkles size={10} color={colors.primary} />
+                  <Text style={[styles.tokenChipText, { color: colors.primary }]}>
+                    {planInfo?.credits_remaining ?? 0} tokens
+                  </Text>
+                </View>
+              </View>
+
               {isFiltered && (
                 <TouchableOpacity
                   onPress={onResetPlatforms}
@@ -352,51 +319,51 @@ export const Header: React.FC<HeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingTop: 6,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    marginBottom: 8,
-  },
-  searchRow: {
-    width: '100%',
-  },
-  controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
+    paddingTop: 8,
+    paddingBottom: 12,
   },
-  tokenBadge: {
+  searchInputWrap: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
+    marginRight: 12,
   },
-  tokenText: {
-    fontSize: 12,
-    fontWeight: '600',
+  searchInput: {
+    flex: 1,
+    fontSize: 22,
+    fontStyle: 'italic',
+    paddingVertical: 2,
+    letterSpacing: -0.3,
   },
-  filterButton: {
-    flexDirection: 'row',
+  clearBtn: {
+    padding: 4,
+    marginLeft: 6,
+  },
+  filterCircleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 5.5,
-    borderRadius: 14,
-    borderWidth: 1,
+    justifyContent: 'center',
+    position: 'relative',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
   },
-  filterButtonText: {
-    fontSize: 12.5,
-    maxWidth: 90,
-  },
-  filterActiveDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginLeft: 1,
+  activeDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#B5814C',
   },
   dropdownBackdrop: {
     flex: 1,
@@ -405,7 +372,7 @@ const styles = StyleSheet.create({
   dropdownCard: {
     position: 'absolute',
     right: 16,
-    width: 230,
+    width: 235,
     maxHeight: 440,
     borderRadius: 18,
     borderWidth: 1,
@@ -423,11 +390,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
+  headerTitleRow: {
+    flexDirection: 'column',
+    gap: 3,
+  },
   dropdownHeaderText: {
     fontSize: 10.5,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  tokenChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3.5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  tokenChipText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   dropdownResetText: {
     fontSize: 11.5,

@@ -34,6 +34,7 @@ import { Header } from '../components/ui/Header';
 import { ToastHud, type ToastItem } from '../components/ui/ToastHud';
 import { FloatingBadge } from '../components/ui/FloatingBadge';
 import { BookmarkCard } from '../components/cards/BookmarkCard';
+import { BottomNavBar, type BottomNavTab } from '../components/ui/BottomNavBar';
 
 import { AddBookmarkModal } from '../components/modals/AddBookmarkModal';
 import { CardActionSheet } from '../components/modals/CardActionSheet';
@@ -111,6 +112,21 @@ export const DashboardScreen: React.FC = () => {
   const [selectedBookmarkForReader, setSelectedBookmarkForReader] = useState<Bookmark | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Bottom Nav Bar active tab
+  const [activeTab, setActiveTab] = useState<BottomNavTab>('home');
+
+  const handleSelectTab = useCallback(
+    (tab: BottomNavTab) => {
+      setActiveTab(tab);
+      if (tab === 'settings' || tab === 'profile') {
+        setIsSettingsOpen(true);
+      } else if (tab === 'notifications') {
+        addToast('All caught up! No new notifications.');
+      }
+    },
+    [addToast]
+  );
 
   // Initial Data Fetch
   const loadData = useCallback(async () => {
@@ -441,23 +457,12 @@ export const DashboardScreen: React.FC = () => {
         }
       />
 
-      {/* Floating Add Link Button (Bottom Right) */}
-      <TouchableOpacity
-        style={[
-          styles.fabButton,
-          {
-            backgroundColor: colors.primary,
-            shadowColor: colors.primary,
-            bottom: Math.max(insets.bottom, 16) + 16,
-          },
-        ]}
-        activeOpacity={0.82}
-        onPress={() => setIsAddModalOpen(true)}
-        accessibilityLabel="Save Link"
-        accessibilityRole="button"
-      >
-        <Plus size={26} color="#FFFFFF" strokeWidth={2.6} />
-      </TouchableOpacity>
+      {/* Bottom React Native Navbar (Matching Figma) */}
+      <BottomNavBar
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        onOpenAddModal={() => setIsAddModalOpen(true)}
+      />
 
       {/* Floating Badges */}
       <FloatingBadge visible={showNoCreditsBadge} text="No credits left" />
@@ -524,7 +529,10 @@ export const DashboardScreen: React.FC = () => {
 
       <SettingsModal
         visible={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={() => {
+          setIsSettingsOpen(false);
+          setActiveTab('home');
+        }}
         planInfo={planInfo}
         onPlanUpdated={loadData}
         onShowToast={addToast}
@@ -543,25 +551,11 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 10,
-    paddingBottom: 96,
+    paddingBottom: 24,
   },
   listEmptyContent: {
     flexGrow: 1,
     justifyContent: 'center',
-  },
-  fabButton: {
-    position: 'absolute',
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.32,
-    shadowRadius: 8,
-    elevation: 6,
-    zIndex: 50,
   },
   emptyContainer: {
     alignItems: 'center',
