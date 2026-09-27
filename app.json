@@ -10,7 +10,20 @@
     "backgroundColor": "#FAF8F5",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mindspace.app"
+      "bundleIdentifier": "com.mindspace.app",
+      "infoPlist": {
+        "UIApplicationSceneManifest": {
+          "UIApplicationSupportsMultipleScenes": false,
+          "UISceneConfigurations": {
+            "UIWindowSceneSessionRoleApplication": [
+              {
+                "UISceneConfigurationName": "Default Configuration",
+                "UISceneDelegateClassName": "SceneDelegate"
+              }
+            ]
+          }
+        }
+      }
     },
     "android": {
       "package": "com.mindspace.app",
