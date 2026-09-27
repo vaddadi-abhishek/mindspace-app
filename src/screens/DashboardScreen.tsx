@@ -42,6 +42,7 @@ import { AiContextModal } from '../components/modals/AiContextModal';
 import { ReaderModal } from '../components/modals/ReaderModal';
 import { DeleteConfirmModal } from '../components/modals/DeleteConfirmModal';
 import { SettingsModal } from '../components/modals/SettingsModal';
+import { ProfileModal } from '../components/modals/ProfileModal';
 
 export const DashboardScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -112,6 +113,7 @@ export const DashboardScreen: React.FC = () => {
   const [selectedBookmarkForReader, setSelectedBookmarkForReader] = useState<Bookmark | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Bottom Nav Bar active tab
   const [activeTab, setActiveTab] = useState<BottomNavTab>('home');
@@ -119,8 +121,10 @@ export const DashboardScreen: React.FC = () => {
   const handleSelectTab = useCallback(
     (tab: BottomNavTab) => {
       setActiveTab(tab);
-      if (tab === 'settings' || tab === 'profile') {
+      if (tab === 'settings') {
         setIsSettingsOpen(true);
+      } else if (tab === 'profile') {
+        setIsProfileOpen(true);
       } else if (tab === 'notifications') {
         addToast('All caught up! No new notifications.');
       }
@@ -535,6 +539,15 @@ export const DashboardScreen: React.FC = () => {
         }}
         planInfo={planInfo}
         onPlanUpdated={loadData}
+        onShowToast={addToast}
+      />
+
+      <ProfileModal
+        visible={isProfileOpen}
+        onClose={() => {
+          setIsProfileOpen(false);
+          setActiveTab('home');
+        }}
         onShowToast={addToast}
       />
     </SafeAreaView>

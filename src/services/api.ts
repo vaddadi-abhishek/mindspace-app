@@ -431,3 +431,24 @@ export async function fetchBookmarkArticle(bookmarkId: string): Promise<ArticleC
     method: 'GET',
   });
 }
+
+export async function updateUserProfile(username: string): Promise<{ user: AuthUser; message: string }> {
+  return request<{ user: AuthUser; message: string }>('/auth/profile', {
+    method: 'PATCH',
+    body: JSON.stringify({ username }),
+  });
+}
+
+export async function changeUserPassword(password: string): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/password', {
+    method: 'PATCH',
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function deleteUserAccount(): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/account', {
+    method: 'DELETE',
+  });
+}
+
