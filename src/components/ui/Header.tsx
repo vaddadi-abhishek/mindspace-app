@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Sun, Moon, Settings, Plus, Sparkles } from 'lucide-react-native';
+import { Sun, Moon, Settings, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { UserPlanInfo, AuthUser } from '../../types/bookmark';
 
@@ -8,14 +8,12 @@ interface HeaderProps {
   user: AuthUser | null;
   planInfo: UserPlanInfo | null;
   onOpenSettings: () => void;
-  onOpenAddModal: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   user,
   planInfo,
   onOpenSettings,
-  onOpenAddModal,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
 
@@ -96,21 +94,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Settings size={16} color={colors.textBody} />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={onOpenAddModal}
-          style={[
-            styles.addButton,
-            {
-              backgroundColor: colors.primary,
-              shadowColor: colors.primary,
-            },
-          ]}
-          activeOpacity={0.85}
-        >
-          <Plus size={15} color="#FFFFFF" strokeWidth={2.5} />
-          <Text style={styles.addButtonText}>Save</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -181,22 +164,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12.5,
-    fontWeight: '700',
   },
 });

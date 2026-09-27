@@ -7,7 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bookmark as BookmarkIcon, Plus, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -44,6 +44,7 @@ import { DeleteConfirmModal } from '../components/modals/DeleteConfirmModal';
 import { SettingsModal } from '../components/modals/SettingsModal';
 
 export const DashboardScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
 
@@ -316,7 +317,6 @@ export const DashboardScreen: React.FC = () => {
         user={user}
         planInfo={planInfo}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenAddModal={() => setIsAddModalOpen(true)}
       />
 
       {/* Search Bar Container */}
@@ -374,7 +374,7 @@ export const DashboardScreen: React.FC = () => {
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
                 {searchTerm || activePlatform !== 'all'
                   ? 'Try searching for something else or clearing filters.'
-                  : 'Tap "+ Save" above or the button below to add your first article, video, or link.'}
+                  : 'Tap the "+" button to add your first article, video, or link.'}
               </Text>
 
               {!searchTerm && activePlatform === 'all' && (
@@ -390,6 +390,24 @@ export const DashboardScreen: React.FC = () => {
           ) : null
         }
       />
+
+      {/* Floating Add Link Button (Bottom Right) */}
+      <TouchableOpacity
+        style={[
+          styles.fabButton,
+          {
+            backgroundColor: colors.primary,
+            shadowColor: colors.primary,
+            bottom: Math.max(insets.bottom, 16) + 16,
+          },
+        ]}
+        activeOpacity={0.82}
+        onPress={() => setIsAddModalOpen(true)}
+        accessibilityLabel="Save Link"
+        accessibilityRole="button"
+      >
+        <Plus size={26} color="#FFFFFF" strokeWidth={2.6} />
+      </TouchableOpacity>
 
       {/* Floating Badges */}
       <FloatingBadge visible={showNoCreditsBadge} text="No credits left" />
@@ -466,11 +484,25 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 40,
+    paddingBottom: 96,
   },
   listEmptyContent: {
     flexGrow: 1,
     justifyContent: 'center',
+  },
+  fabButton: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.32,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 50,
   },
   emptyContainer: {
     alignItems: 'center',
