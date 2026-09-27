@@ -41,8 +41,9 @@ import { CardActionSheet } from '../components/modals/CardActionSheet';
 import { AiContextModal } from '../components/modals/AiContextModal';
 import { ReaderModal } from '../components/modals/ReaderModal';
 import { DeleteConfirmModal } from '../components/modals/DeleteConfirmModal';
-import { SettingsModal } from '../components/modals/SettingsModal';
-import { ProfileModal } from '../components/modals/ProfileModal';
+import { NotificationsScreen } from './NotificationsScreen';
+import { SettingsScreen } from './SettingsScreen';
+import { ProfileScreen } from './ProfileScreen';
 
 export const DashboardScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -112,8 +113,6 @@ export const DashboardScreen: React.FC = () => {
   const [selectedBookmarkForAi, setSelectedBookmarkForAi] = useState<Bookmark | null>(null);
   const [selectedBookmarkForReader, setSelectedBookmarkForReader] = useState<Bookmark | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Bottom Nav Bar active tab
   const [activeTab, setActiveTab] = useState<BottomNavTab>('home');
@@ -121,15 +120,8 @@ export const DashboardScreen: React.FC = () => {
   const handleSelectTab = useCallback(
     (tab: BottomNavTab) => {
       setActiveTab(tab);
-      if (tab === 'settings') {
-        setIsSettingsOpen(true);
-      } else if (tab === 'profile') {
-        setIsProfileOpen(true);
-      } else if (tab === 'notifications') {
-        addToast('All caught up! No new notifications.');
-      }
     },
-    [addToast]
+    []
   );
 
   // Initial Data Fetch
@@ -373,93 +365,117 @@ export const DashboardScreen: React.FC = () => {
       edges={['top', 'left', 'right']}
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      {/* Bookmark Feed with scrollable top search bar, tokens & filters */}
-      <FlatList
-        style={styles.feedList}
-        data={filteredBookmarks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <BookmarkCard
-            bookmark={item}
-            onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
-            onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
-            onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
-          />
-        )}
-        ListHeaderComponent={
-          <Header
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            selectedPlatforms={selectedPlatforms}
-            onTogglePlatform={handleTogglePlatform}
-            onResetPlatforms={handleResetPlatforms}
-            platformCounts={platformCounts}
-            planInfo={planInfo}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-          />
-        }
-        contentContainerStyle={[
-          styles.listContent,
-          filteredBookmarks.length === 0 && styles.listEmptyContent,
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-        ListEmptyComponent={
-          !loading ? (
-            <View style={styles.emptyContainer}>
-              <View
-                style={[
-                  styles.emptyIconWrap,
-                  { backgroundColor: colors.accentBg },
-                ]}
-              >
-                <BookmarkIcon size={32} color={colors.primary} />
+      {/* 1. Home / Bookmark Feed Screen */}
+      {activeTab === 'home' && (
+        <FlatList
+          style={styles.feedList}
+          data={filteredBookmarks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <BookmarkCard
+              bookmark={item}
+              onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
+              onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
+              onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
+            />
+          )}
+          ListHeaderComponent={
+            <Header
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedPlatforms={selectedPlatforms}
+              onTogglePlatform={handleTogglePlatform}
+              onResetPlatforms={handleResetPlatforms}
+              platformCounts={platformCounts}
+              planInfo={planInfo}
+              onOpenSettings={() => setActiveTab('settings')}
+            />
+          }
+          contentContainerStyle={[
+            styles.listContent,
+            filteredBookmarks.length === 0 && styles.listEmptyContent,
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.emptyContainer}>
+                <View
+                  style={[
+                    styles.emptyIconWrap,
+                    { backgroundColor: colors.accentBg },
+                  ]}
+                >
+                  <BookmarkIcon size={32} color={colors.primary} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.textHeading }]}>
+                  {searchTerm || !isAllSelected
+                    ? 'No matching bookmarks'
+                    : 'Your Mindspace is empty'}
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                  {searchTerm || !isAllSelected
+                    ? 'Try searching for something else or clearing filters.'
+                    : 'Tap the "+" button to add your first article, video, or link.'}
+                </Text>
+
+                {(searchTerm || !isAllSelected) && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchTerm('');
+                      setSelectedPlatforms(['all']);
+                    }}
+                    style={[styles.emptyResetBtn, { borderColor: colors.primary }]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
+                      Clear Search & Filters
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {!searchTerm && isAllSelected && (
+                  <TouchableOpacity
+                    onPress={() => setIsAddModalOpen(true)}
+                    style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]}
+                  >
+                    <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                    <Text style={styles.emptyAddBtnText}>Save First Link</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.textHeading }]}>
-                {searchTerm || !isAllSelected
-                  ? 'No matching bookmarks'
-                  : 'Your Mindspace is empty'}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                {searchTerm || !isAllSelected
-                  ? 'Try searching for something else or clearing filters.'
-                  : 'Tap the "+" button to add your first article, video, or link.'}
-              </Text>
+            ) : null
+          }
+        />
+      )}
 
-              {(searchTerm || !isAllSelected) && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSearchTerm('');
-                    setSelectedPlatforms(['all']);
-                  }}
-                  style={[styles.emptyResetBtn, { borderColor: colors.primary }]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
-                    Clear Search & Filters
-                  </Text>
-                </TouchableOpacity>
-              )}
+      {/* 2. Notifications Screen */}
+      {activeTab === 'notifications' && (
+        <NotificationsScreen
+          onShowToast={addToast}
+          onNavigateHome={() => setActiveTab('home')}
+        />
+      )}
 
-              {!searchTerm && isAllSelected && (
-                <TouchableOpacity
-                  onPress={() => setIsAddModalOpen(true)}
-                  style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]}
-                >
-                  <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-                  <Text style={styles.emptyAddBtnText}>Save First Link</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : null
-        }
-      />
+      {/* 3. Settings Screen */}
+      {activeTab === 'settings' && (
+        <SettingsScreen
+          planInfo={planInfo}
+          onPlanUpdated={loadData}
+          onShowToast={addToast}
+        />
+      )}
+
+      {/* 4. Profile Screen */}
+      {activeTab === 'profile' && (
+        <ProfileScreen onShowToast={addToast} />
+      )}
 
       {/* Bottom React Native Navbar (Matching Figma) */}
       <BottomNavBar
@@ -529,26 +545,6 @@ export const DashboardScreen: React.FC = () => {
         visible={Boolean(deleteTargetId)}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleDeleteConfirm}
-      />
-
-      <SettingsModal
-        visible={isSettingsOpen}
-        onClose={() => {
-          setIsSettingsOpen(false);
-          setActiveTab('home');
-        }}
-        planInfo={planInfo}
-        onPlanUpdated={loadData}
-        onShowToast={addToast}
-      />
-
-      <ProfileModal
-        visible={isProfileOpen}
-        onClose={() => {
-          setIsProfileOpen(false);
-          setActiveTab('home');
-        }}
-        onShowToast={addToast}
       />
     </SafeAreaView>
   );
