@@ -6,8 +6,10 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bookmark as BookmarkIcon, Plus, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -26,12 +28,11 @@ import {
   findDuplicateBookmark,
   matchesPlatform,
   extractUrlFromText,
+  PLATFORM_TABS,
   type PlatformType,
 } from '../utils/helpers';
 
 import { Header } from '../components/ui/Header';
-import { SearchBar } from '../components/ui/SearchBar';
-import { FilterPills } from '../components/ui/FilterPills';
 import { ToastHud, type ToastItem } from '../components/ui/ToastHud';
 import { FloatingBadge } from '../components/ui/FloatingBadge';
 import { BookmarkCard } from '../components/cards/BookmarkCard';
@@ -60,6 +61,7 @@ export const DashboardScreen: React.FC = () => {
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
   const [activePlatform, setActivePlatform] = useState<PlatformType>('all');
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Generating AI tracking
   const [generatingAiIds, setGeneratingAiIds] = useState<Set<string>>(new Set());
@@ -281,6 +283,19 @@ export const DashboardScreen: React.FC = () => {
     }
   }, [hasShareIntent, shareIntent, addToast, resetShareIntent]);
 
+  // Platform Counts
+  const platformCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: bookmarks.length };
+    bookmarks.forEach((bm) => {
+      PLATFORM_TABS.forEach((tab) => {
+        if (tab.id !== 'all' && matchesPlatform(bm, tab.id)) {
+          counts[tab.id] = (counts[tab.id] || 0) + 1;
+        }
+      });
+    });
+    return counts;
+  }, [bookmarks]);
+
   // Filter & Search
   const filteredBookmarks = useMemo(() => {
     let result = bookmarks;
@@ -307,30 +322,21 @@ export const DashboardScreen: React.FC = () => {
     return result;
   }, [bookmarks, activePlatform, searchTerm]);
 
+  // Scroll handler for glassmorphic navbar behavior
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = e.nativeEvent.contentOffset.y;
+      const nextScrolled = offsetY > 10;
+      if (nextScrolled !== isScrolled) {
+        setIsScrolled(nextScrolled);
+      }
+    },
+    [isScrolled]
+  );
+
   return (
-    <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      {/* Top Header */}
-      <Header
-        user={user}
-        planInfo={planInfo}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
-
-      {/* Search Bar Container */}
-      <View style={styles.searchContainer}>
-        <SearchBar value={searchTerm} onChangeText={setSearchTerm} />
-      </View>
-
-      {/* Platform Filter Pills */}
-      <FilterPills
-        activePlatform={activePlatform}
-        onSelectPlatform={setActivePlatform}
-      />
-
-      {/* Bookmark Feed */}
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      {/* Bookmark Feed (Scrolls smoothly underneath sticky glass top nav) */}
       <FlatList
         style={styles.feedList}
         data={filteredBookmarks}
@@ -343,8 +349,11 @@ export const DashboardScreen: React.FC = () => {
             onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
           />
         )}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={[
           styles.listContent,
+          { paddingTop: Math.max(insets.top, 8) + 58 + 10 },
           filteredBookmarks.length === 0 && styles.listEmptyContent,
         ]}
         refreshControl={
@@ -353,6 +362,7 @@ export const DashboardScreen: React.FC = () => {
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
+            progressViewOffset={Math.max(insets.top, 8) + 58}
           />
         }
         ListEmptyComponent={
@@ -377,6 +387,21 @@ export const DashboardScreen: React.FC = () => {
                   : 'Tap the "+" button to add your first article, video, or link.'}
               </Text>
 
+              {(searchTerm || activePlatform !== 'all') && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchTerm('');
+                    setActivePlatform('all');
+                  }}
+                  style={[styles.emptyResetBtn, { borderColor: colors.primary }]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
+                    Clear Search & Filters
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               {!searchTerm && activePlatform === 'all' && (
                 <TouchableOpacity
                   onPress={() => setIsAddModalOpen(true)}
@@ -389,6 +414,16 @@ export const DashboardScreen: React.FC = () => {
             </View>
           ) : null
         }
+      />
+
+      {/* Sticky Top Header with Web-Style Search Bar, Filter Dropdown & Glass UI */}
+      <Header
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        activePlatform={activePlatform}
+        onSelectPlatform={setActivePlatform}
+        platformCounts={platformCounts}
+        isScrolled={isScrolled}
       />
 
       {/* Floating Add Link Button (Bottom Right) */}
@@ -429,13 +464,27 @@ export const DashboardScreen: React.FC = () => {
         visible={Boolean(selectedBookmarkForMenu)}
         bookmark={selectedBookmarkForMenu}
         onClose={() => setSelectedBookmarkForMenu(null)}
-        onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
-        onGenerateAiContext={(bm) => handleGenerateAi(bm)}
-        onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
-        onRequestDelete={(id) => setDeleteTargetId(id)}
+        onReadArticle={(bm) => {
+          setSelectedBookmarkForMenu(null);
+          setSelectedBookmarkForReader(bm);
+        }}
+        onViewAiContext={(bm) => {
+          setSelectedBookmarkForMenu(null);
+          setSelectedBookmarkForAi(bm);
+        }}
+        onGenerateAiContext={(bm) => {
+          setSelectedBookmarkForMenu(null);
+          handleGenerateAi(bm);
+        }}
+        onRequestDelete={(id) => {
+          setSelectedBookmarkForMenu(null);
+          setDeleteTargetId(id);
+        }}
         onShowToast={addToast}
         isGeneratingAi={
-          selectedBookmarkForMenu ? generatingAiIds.has(selectedBookmarkForMenu.id) : false
+          selectedBookmarkForMenu
+            ? generatingAiIds.has(selectedBookmarkForMenu.id)
+            : false
         }
       />
 
@@ -465,7 +514,7 @@ export const DashboardScreen: React.FC = () => {
         onPlanUpdated={loadData}
         onShowToast={addToast}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -476,14 +525,8 @@ const styles = StyleSheet.create({
   feedList: {
     flex: 1,
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 2,
-  },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 4,
     paddingBottom: 96,
   },
   listEmptyContent: {
@@ -528,6 +571,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 290,
+  },
+  emptyResetBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  emptyResetBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   emptyAddBtn: {
     flexDirection: 'row',

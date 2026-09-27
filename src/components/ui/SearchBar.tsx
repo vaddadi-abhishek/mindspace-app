@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Search, X } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { X } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 interface SearchBarProps {
@@ -15,30 +15,35 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = 'Search your mind...',
 }) => {
   const { colors, isDark } = useTheme();
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? 'rgba(26, 22, 18, 0.9)' : 'rgba(255, 255, 255, 0.92)',
-          borderColor: isDark ? 'rgba(60, 52, 44, 0.8)' : 'rgba(235, 229, 220, 0.9)',
-          shadowColor: colors.shadow,
+          borderBottomColor: isFocused
+            ? colors.primary
+            : isDark
+            ? 'rgba(200, 142, 62, 0.35)'
+            : 'rgba(181, 129, 76, 0.35)',
         },
       ]}
     >
-      <Search size={16} color={colors.textMuted} style={styles.searchIcon} />
       <TextInput
         style={[
           styles.input,
           {
             color: colors.textHeading,
+            fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
           },
         ]}
         value={value}
         onChangeText={onChangeText}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={isDark ? 'rgba(126, 117, 105, 0.7)' : 'rgba(140, 131, 119, 0.7)'}
         autoCorrect={false}
         autoCapitalize="none"
         clearButtonMode="never"
@@ -48,8 +53,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onPress={() => onChangeText('')}
           style={styles.clearBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="Clear search"
+          accessibilityRole="button"
         >
-          <X size={14} color={colors.textMuted} />
+          <X size={15} color={colors.textMuted} strokeWidth={2.2} />
         </TouchableOpacity>
       )}
     </View>
@@ -58,29 +65,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    height: 42,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 8,
+    borderBottomWidth: 1.5,
+    paddingBottom: 4,
+    height: 38,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 17,
     fontStyle: 'italic',
     paddingVertical: 0,
-    fontFamily: 'Georgia',
+    letterSpacing: -0.2,
   },
   clearBtn: {
-    padding: 4,
-    marginLeft: 6,
+    padding: 3,
+    marginLeft: 4,
   },
 });
