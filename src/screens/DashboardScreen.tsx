@@ -20,6 +20,7 @@ import {
   getUserPlan,
   CreditExhaustedError,
 } from '../services/api';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useShareIntent } from 'expo-share-intent';
 import {
   findDuplicateBookmark,
@@ -234,8 +235,15 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
+  // Check if running inside Expo Go sandbox (native share extension requires standalone/dev build)
+  const isExpoGo =
+    Constants.appOwnership === 'expo' ||
+    Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
   // Inbound Share Intent listener (Safari, Chrome, X, Instagram, YouTube, etc.)
-  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent({
+    disabled: isExpoGo,
+  });
 
   useEffect(() => {
     if (!hasShareIntent) return;
