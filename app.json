@@ -2,6 +2,7 @@
   "expo": {
     "name": "Mindspace",
     "slug": "mindspace",
+    "scheme": "mindspace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,6 +25,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-share-intent",
+        {
+          "ios": {
+            "AppGroup": "group.com.mindspace.app"
+          }
+        }
+      ]
+    ]
   }
 }

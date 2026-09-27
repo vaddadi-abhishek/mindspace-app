@@ -20,9 +20,11 @@ import {
   getUserPlan,
   CreditExhaustedError,
 } from '../services/api';
+import { useShareIntent } from 'expo-share-intent';
 import {
   findDuplicateBookmark,
   matchesPlatform,
+  extractUrlFromText,
   type PlatformType,
 } from '../utils/helpers';
 
@@ -231,6 +233,44 @@ export const DashboardScreen: React.FC = () => {
       addToast(`Error: ${message}`, 'error');
     }
   };
+
+  // Inbound Share Intent listener (Safari, Chrome, X, Instagram, YouTube, etc.)
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+
+  useEffect(() => {
+    if (!hasShareIntent) return;
+
+    const rawCandidate =
+      shareIntent.webUrl ||
+      extractUrlFromText(shareIntent.text) ||
+      (shareIntent.text && /^https?:\/\//i.test(shareIntent.text.trim()) ? shareIntent.text.trim() : null);
+
+    if (rawCandidate) {
+      const targetUrl = rawCandidate.trim();
+      let sourceName = 'Shared Link';
+      try {
+        const parsed = new URL(targetUrl);
+        sourceName = parsed.hostname.replace(/^www\./, '');
+      } catch {
+        // fallback
+      }
+
+      const incomingBookmark: Bookmark = {
+        id: `bm_${Date.now()}`,
+        url: targetUrl,
+        title: sourceName,
+        description: '',
+        logo: null,
+        site_name: sourceName,
+        created_at: new Date().toISOString(),
+        isFetchingMetadata: true,
+      };
+
+      handleAddBookmark(incomingBookmark);
+      addToast(`Saving shared link from ${sourceName}...`, 'success');
+      resetShareIntent();
+    }
+  }, [hasShareIntent, shareIntent, addToast, resetShareIntent]);
 
   // Filter & Search
   const filteredBookmarks = useMemo(() => {

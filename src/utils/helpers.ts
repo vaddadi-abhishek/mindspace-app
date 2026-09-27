@@ -19,6 +19,12 @@ export function sanitizeUrl(url?: string): string {
   return clean;
 }
 
+export function extractUrlFromText(text?: string | null): string | null {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s]+/i);
+  return match ? match[0] : null;
+}
+
 export function formatNumber(num?: number): string | null {
   if (num === undefined || num === null || num <= 0) return null;
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
