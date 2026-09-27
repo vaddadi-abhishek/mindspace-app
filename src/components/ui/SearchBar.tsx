@@ -65,17 +65,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1.5,
-    paddingBottom: 4,
-    height: 38,
-    marginRight: 10,
+    paddingBottom: 6,
+    height: 40,
   },
   input: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 18,
     fontStyle: 'italic',
     paddingVertical: 0,
     letterSpacing: -0.2,

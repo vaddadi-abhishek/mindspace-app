@@ -6,11 +6,9 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Bookmark as BookmarkIcon, Plus, Sparkles } from 'lucide-react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Bookmark as BookmarkIcon, Plus } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import type { Bookmark, UserPlanInfo } from '../types/bookmark';
@@ -46,7 +44,7 @@ import { SettingsModal } from '../components/modals/SettingsModal';
 
 export const DashboardScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
 
   // Bookmarks State
@@ -54,14 +52,13 @@ export const DashboardScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Plan info
+  // Plan info (tokens / credits)
   const [planInfo, setPlanInfo] = useState<UserPlanInfo | null>(null);
   const [autoAiContext, setAutoAiContext] = useState(true);
 
-  // Search & Filter
+  // Search & Multi-select Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [activePlatform, setActivePlatform] = useState<PlatformType>('all');
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformType[]>(['all']);
 
   // Generating AI tracking
   const [generatingAiIds, setGeneratingAiIds] = useState<Set<string>>(new Set());
@@ -203,6 +200,8 @@ export const DashboardScreen: React.FC = () => {
         prev.map((b) => (b.id === bm.id ? { ...b, ...updated } : b))
       );
       addToast('✨ AI Context generated successfully!', 'success');
+      // Refresh plan info to update remaining tokens
+      getUserPlan().then(setPlanInfo).catch(() => {});
     } catch (err: unknown) {
       if (
         err instanceof CreditExhaustedError ||
@@ -296,13 +295,40 @@ export const DashboardScreen: React.FC = () => {
     return counts;
   }, [bookmarks]);
 
+  // Multi-select toggle platform
+  const handleTogglePlatform = useCallback((platform: PlatformType) => {
+    if (platform === 'all') {
+      setSelectedPlatforms(['all']);
+      return;
+    }
+
+    setSelectedPlatforms((prev) => {
+      const withoutAll = prev.filter((p) => p !== 'all');
+      if (withoutAll.includes(platform)) {
+        const next = withoutAll.filter((p) => p !== platform);
+        return next.length === 0 ? ['all'] : next;
+      } else {
+        return [...withoutAll, platform];
+      }
+    });
+  }, []);
+
+  const handleResetPlatforms = useCallback(() => {
+    setSelectedPlatforms(['all']);
+  }, []);
+
   // Filter & Search
+  const isAllSelected =
+    selectedPlatforms.length === 0 || selectedPlatforms.includes('all');
+
   const filteredBookmarks = useMemo(() => {
     let result = bookmarks;
 
-    // Platform filter
-    if (activePlatform !== 'all') {
-      result = result.filter((bm) => matchesPlatform(bm, activePlatform));
+    // Platform multi-select filter
+    if (!isAllSelected) {
+      result = result.filter((bm) =>
+        selectedPlatforms.some((platform) => matchesPlatform(bm, platform))
+      );
     }
 
     // Search query
@@ -320,23 +346,26 @@ export const DashboardScreen: React.FC = () => {
     }
 
     return result;
-  }, [bookmarks, activePlatform, searchTerm]);
-
-  // Scroll handler for glassmorphic navbar behavior
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetY = e.nativeEvent.contentOffset.y;
-      const nextScrolled = offsetY > 10;
-      if (nextScrolled !== isScrolled) {
-        setIsScrolled(nextScrolled);
-      }
-    },
-    [isScrolled]
-  );
+  }, [bookmarks, selectedPlatforms, isAllSelected, searchTerm]);
 
   return (
-    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* Bookmark Feed (Scrolls smoothly underneath sticky glass top nav) */}
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
+      {/* Top Header: Web-Style Search Bar, AI Tokens (Left) & Multi-Select Filters (Right) */}
+      <Header
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedPlatforms={selectedPlatforms}
+        onTogglePlatform={handleTogglePlatform}
+        onResetPlatforms={handleResetPlatforms}
+        platformCounts={platformCounts}
+        planInfo={planInfo}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
+
+      {/* Bookmark Feed */}
       <FlatList
         style={styles.feedList}
         data={filteredBookmarks}
@@ -349,11 +378,8 @@ export const DashboardScreen: React.FC = () => {
             onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
           />
         )}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: Math.max(insets.top, 8) + 58 + 10 },
           filteredBookmarks.length === 0 && styles.listEmptyContent,
         ]}
         refreshControl={
@@ -362,7 +388,6 @@ export const DashboardScreen: React.FC = () => {
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
-            progressViewOffset={Math.max(insets.top, 8) + 58}
           />
         }
         ListEmptyComponent={
@@ -377,21 +402,21 @@ export const DashboardScreen: React.FC = () => {
                 <BookmarkIcon size={32} color={colors.primary} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.textHeading }]}>
-                {searchTerm || activePlatform !== 'all'
+                {searchTerm || !isAllSelected
                   ? 'No matching bookmarks'
                   : 'Your Mindspace is empty'}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                {searchTerm || activePlatform !== 'all'
+                {searchTerm || !isAllSelected
                   ? 'Try searching for something else or clearing filters.'
                   : 'Tap the "+" button to add your first article, video, or link.'}
               </Text>
 
-              {(searchTerm || activePlatform !== 'all') && (
+              {(searchTerm || !isAllSelected) && (
                 <TouchableOpacity
                   onPress={() => {
                     setSearchTerm('');
-                    setActivePlatform('all');
+                    setSelectedPlatforms(['all']);
                   }}
                   style={[styles.emptyResetBtn, { borderColor: colors.primary }]}
                   activeOpacity={0.8}
@@ -402,7 +427,7 @@ export const DashboardScreen: React.FC = () => {
                 </TouchableOpacity>
               )}
 
-              {!searchTerm && activePlatform === 'all' && (
+              {!searchTerm && isAllSelected && (
                 <TouchableOpacity
                   onPress={() => setIsAddModalOpen(true)}
                   style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]}
@@ -414,16 +439,6 @@ export const DashboardScreen: React.FC = () => {
             </View>
           ) : null
         }
-      />
-
-      {/* Sticky Top Header with Web-Style Search Bar, Filter Dropdown & Glass UI */}
-      <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        activePlatform={activePlatform}
-        onSelectPlatform={setActivePlatform}
-        platformCounts={platformCounts}
-        isScrolled={isScrolled}
       />
 
       {/* Floating Add Link Button (Bottom Right) */}
@@ -514,7 +529,7 @@ export const DashboardScreen: React.FC = () => {
         onPlanUpdated={loadData}
         onShowToast={addToast}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -527,6 +542,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
+    paddingTop: 10,
     paddingBottom: 96,
   },
   listEmptyContent: {

@@ -9,35 +9,45 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SlidersHorizontal, ChevronDown, Check } from 'lucide-react-native';
+import { SlidersHorizontal, ChevronDown, Check, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { SearchBar } from './SearchBar';
 import { PLATFORM_TABS, type PlatformType } from '../../utils/helpers';
+import type { UserPlanInfo } from '../../types/bookmark';
 
 interface HeaderProps {
   searchTerm: string;
   onSearchChange: (text: string) => void;
-  activePlatform: PlatformType;
-  onSelectPlatform: (platform: PlatformType) => void;
+  selectedPlatforms: PlatformType[];
+  onTogglePlatform: (platform: PlatformType) => void;
+  onResetPlatforms: () => void;
   platformCounts: Record<string, number>;
-  isScrolled: boolean;
+  planInfo: UserPlanInfo | null;
+  onOpenSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   searchTerm,
   onSearchChange,
-  activePlatform,
-  onSelectPlatform,
+  selectedPlatforms,
+  onTogglePlatform,
+  onResetPlatforms,
   platformCounts,
-  isScrolled,
+  planInfo,
+  onOpenSettings,
 }) => {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
-  const isFiltered = activePlatform !== 'all';
-  const activeTabLabel =
-    PLATFORM_TABS.find((tab) => tab.id === activePlatform)?.label || 'Filter';
+  const isFiltered =
+    selectedPlatforms.length > 0 && !selectedPlatforms.includes('all');
+
+  const filterButtonLabel = !isFiltered
+    ? 'Filter'
+    : selectedPlatforms.length === 1
+    ? PLATFORM_TABS.find((t) => t.id === selectedPlatforms[0])?.label || 'Filter'
+    : `Filters (${selectedPlatforms.length})`;
 
   return (
     <>
@@ -45,32 +55,42 @@ export const Header: React.FC<HeaderProps> = ({
         style={[
           styles.container,
           {
-            paddingTop: Math.max(insets.top, 8) + 6,
-            backgroundColor: isScrolled
-              ? isDark
-                ? 'rgba(11, 9, 7, 0.88)'
-                : 'rgba(250, 248, 245, 0.92)'
-              : 'transparent',
-            borderBottomColor: isScrolled
-              ? isDark
-                ? 'rgba(60, 52, 44, 0.7)'
-                : 'rgba(235, 229, 220, 0.85)'
-              : 'transparent',
-            shadowColor: isScrolled
-              ? isDark
-                ? '#000000'
-                : '#211D1A'
-              : 'transparent',
-            shadowOpacity: isScrolled ? (isDark ? 0.45 : 0.08) : 0,
-            elevation: isScrolled ? 4 : 0,
+            backgroundColor: colors.background,
+            borderBottomColor: colors.borderLight,
           },
         ]}
       >
-        <View style={styles.contentRow}>
-          {/* Web-Style Search Bar */}
+        {/* Row 1: Search Bar (Full Width) */}
+        <View style={styles.searchRow}>
           <SearchBar value={searchTerm} onChangeText={onSearchChange} />
+        </View>
 
-          {/* Platform Filter Button */}
+        {/* Row 2: Tokens (Left) and Multi-Select Filter Button (Right) */}
+        <View style={styles.controlsRow}>
+          {/* Left: Remaining AI Tokens */}
+          <TouchableOpacity
+            style={[
+              styles.tokenBadge,
+              {
+                backgroundColor: isDark
+                  ? 'rgba(200, 142, 62, 0.12)'
+                  : 'rgba(181, 129, 76, 0.08)',
+                borderColor: isDark
+                  ? 'rgba(200, 142, 62, 0.25)'
+                  : 'rgba(181, 129, 76, 0.22)',
+              },
+            ]}
+            onPress={onOpenSettings}
+            activeOpacity={0.7}
+            accessibilityLabel="Remaining AI tokens"
+          >
+            <Sparkles size={12} color={colors.primary} />
+            <Text style={[styles.tokenText, { color: colors.primary }]}>
+              {planInfo?.credits_remaining ?? 0} AI tokens
+            </Text>
+          </TouchableOpacity>
+
+          {/* Right: Multi-Select Filter Button */}
           <TouchableOpacity
             style={[
               styles.filterButton,
@@ -91,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
             ]}
             onPress={() => setIsFilterDropdownOpen(true)}
             activeOpacity={0.75}
-            accessibilityLabel="Filter by platform"
+            accessibilityLabel="Filter bookmarks by platform"
             accessibilityRole="button"
           >
             <SlidersHorizontal
@@ -109,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
               ]}
               numberOfLines={1}
             >
-              {isFiltered ? activeTabLabel : 'Filter'}
+              {filterButtonLabel}
             </Text>
             <ChevronDown
               size={12}
@@ -128,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
       </View>
 
-      {/* Platform Filter Dropdown Modal */}
+      {/* Multi-Select Filter Dropdown Modal */}
       <Modal
         visible={isFilterDropdownOpen}
         transparent={true}
@@ -143,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
             style={[
               styles.dropdownCard,
               {
-                top: Math.max(insets.top, 8) + 54,
+                top: Math.max(insets.top, 8) + 98,
                 backgroundColor: isDark ? '#161310' : '#FAF8F5',
                 borderColor: isDark
                   ? 'rgba(200, 142, 62, 0.25)'
@@ -152,6 +172,7 @@ export const Header: React.FC<HeaderProps> = ({
               },
             ]}
           >
+            {/* Header */}
             <View style={styles.dropdownHeader}>
               <Text
                 style={[
@@ -163,10 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Text>
               {isFiltered && (
                 <TouchableOpacity
-                  onPress={() => {
-                    onSelectPlatform('all');
-                    setIsFilterDropdownOpen(false);
-                  }}
+                  onPress={onResetPlatforms}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Text
@@ -192,9 +210,13 @@ export const Header: React.FC<HeaderProps> = ({
               ]}
             />
 
+            {/* Platform items with multi-select checkboxes */}
             <ScrollView style={styles.dropdownList} bounces={false}>
               {PLATFORM_TABS.map((tab) => {
-                const isSelected = activePlatform === tab.id;
+                const isSelected =
+                  tab.id === 'all'
+                    ? !isFiltered
+                    : selectedPlatforms.includes(tab.id);
                 const count = platformCounts[tab.id] ?? 0;
 
                 return (
@@ -208,64 +230,101 @@ export const Header: React.FC<HeaderProps> = ({
                           : 'rgba(181, 129, 76, 0.08)',
                       },
                     ]}
-                    onPress={() => {
-                      onSelectPlatform(tab.id);
-                      setIsFilterDropdownOpen(false);
-                    }}
+                    onPress={() => onTogglePlatform(tab.id)}
                     activeOpacity={0.7}
                   >
-                    <Text
-                      style={[
-                        styles.dropdownItemText,
-                        {
-                          color: isSelected
-                            ? colors.primary
-                            : colors.textHeading,
-                          fontWeight: isSelected ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {tab.label}
-                    </Text>
-
-                    <View style={styles.dropdownItemRight}>
+                    {/* Left: Checkbox & Label */}
+                    <View style={styles.dropdownItemLeft}>
                       <View
                         style={[
-                          styles.countBadge,
+                          styles.checkbox,
                           {
-                            backgroundColor: isSelected
+                            borderColor: isSelected
                               ? colors.primary
                               : isDark
-                              ? 'rgba(255, 255, 255, 0.08)'
-                              : 'rgba(0, 0, 0, 0.05)',
+                              ? 'rgba(255, 255, 255, 0.3)'
+                              : 'rgba(0, 0, 0, 0.25)',
+                            backgroundColor: isSelected
+                              ? colors.primary
+                              : 'transparent',
                           },
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.countBadgeText,
-                            {
-                              color: isSelected ? '#FFFFFF' : colors.textMuted,
-                            },
-                          ]}
-                        >
-                          {count}
-                        </Text>
+                        {isSelected && (
+                          <Check
+                            size={10.5}
+                            color="#FFFFFF"
+                            strokeWidth={3}
+                          />
+                        )}
                       </View>
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          {
+                            color: isSelected
+                              ? colors.primary
+                              : colors.textHeading,
+                            fontWeight: isSelected ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {tab.label}
+                      </Text>
+                    </View>
 
-                      {isSelected && (
-                        <Check
-                          size={14}
-                          color={colors.primary}
-                          strokeWidth={2.5}
-                          style={styles.checkIcon}
-                        />
-                      )}
+                    {/* Right: Count Badge */}
+                    <View
+                      style={[
+                        styles.countBadge,
+                        {
+                          backgroundColor: isSelected
+                            ? colors.primary
+                            : isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : 'rgba(0, 0, 0, 0.05)',
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.countBadgeText,
+                          {
+                            color: isSelected ? '#FFFFFF' : colors.textMuted,
+                          },
+                        ]}
+                      >
+                        {count}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
+
+            {/* Footer with Done button */}
+            <View
+              style={[
+                styles.dropdownDivider,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(60, 52, 44, 0.6)'
+                    : 'rgba(235, 229, 220, 0.8)',
+                },
+              ]}
+            />
+            <View style={styles.dropdownFooter}>
+              <TouchableOpacity
+                style={[
+                  styles.applyButton,
+                  { backgroundColor: colors.primary },
+                ]}
+                onPress={() => setIsFilterDropdownOpen(false)}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.applyButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </Pressable>
       </Modal>
@@ -275,34 +334,45 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 30,
     paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
   },
-  contentRow: {
+  searchRow: {
+    width: '100%',
+  },
+  controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  tokenBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  tokenText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 11,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingVertical: 5.5,
+    borderRadius: 14,
     borderWidth: 1,
   },
   filterButtonText: {
     fontSize: 12.5,
-    maxWidth: 75,
+    maxWidth: 90,
   },
   filterActiveDot: {
     width: 5,
@@ -312,13 +382,13 @@ const styles = StyleSheet.create({
   },
   dropdownBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+    backgroundColor: 'rgba(0, 0, 0, 0.22)',
   },
   dropdownCard: {
     position: 'absolute',
     right: 16,
-    width: 215,
-    maxHeight: 380,
+    width: 230,
+    maxHeight: 440,
     borderRadius: 18,
     borderWidth: 1,
     paddingVertical: 8,
@@ -350,23 +420,32 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   dropdownList: {
-    maxHeight: 320,
+    maxHeight: 280,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 8.5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginHorizontal: 4,
     borderRadius: 10,
   },
-  dropdownItemText: {
-    fontSize: 13,
-  },
-  dropdownItemRight: {
+  dropdownItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  checkbox: {
+    width: 17,
+    height: 17,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropdownItemText: {
+    fontSize: 13,
   },
   countBadge: {
     paddingHorizontal: 6.5,
@@ -377,7 +456,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  checkIcon: {
-    marginLeft: 6,
+  dropdownFooter: {
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 2,
+  },
+  applyButton: {
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
