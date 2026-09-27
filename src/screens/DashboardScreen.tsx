@@ -353,19 +353,7 @@ export const DashboardScreen: React.FC = () => {
       edges={['top', 'left', 'right']}
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      {/* Top Header: Web-Style Search Bar, AI Tokens (Left) & Multi-Select Filters (Right) */}
-      <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        selectedPlatforms={selectedPlatforms}
-        onTogglePlatform={handleTogglePlatform}
-        onResetPlatforms={handleResetPlatforms}
-        platformCounts={platformCounts}
-        planInfo={planInfo}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
-
-      {/* Bookmark Feed */}
+      {/* Bookmark Feed with scrollable top search bar, tokens & filters */}
       <FlatList
         style={styles.feedList}
         data={filteredBookmarks}
@@ -378,6 +366,18 @@ export const DashboardScreen: React.FC = () => {
             onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
           />
         )}
+        ListHeaderComponent={
+          <Header
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            selectedPlatforms={selectedPlatforms}
+            onTogglePlatform={handleTogglePlatform}
+            onResetPlatforms={handleResetPlatforms}
+            platformCounts={platformCounts}
+            planInfo={planInfo}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        }
         contentContainerStyle={[
           styles.listContent,
           filteredBookmarks.length === 0 && styles.listEmptyContent,

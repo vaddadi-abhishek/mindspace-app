@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [dropdownTop, setDropdownTop] = useState(110);
+  const filterBtnRef = useRef<View>(null);
 
   const isFiltered =
     selectedPlatforms.length > 0 && !selectedPlatforms.includes('all');
@@ -48,6 +50,19 @@ export const Header: React.FC<HeaderProps> = ({
     : selectedPlatforms.length === 1
     ? PLATFORM_TABS.find((t) => t.id === selectedPlatforms[0])?.label || 'Filter'
     : `Filters (${selectedPlatforms.length})`;
+
+  const handleOpenDropdown = () => {
+    if (filterBtnRef.current) {
+      filterBtnRef.current.measureInWindow((_x, y, _width, height) => {
+        if (y > 0) {
+          setDropdownTop(y + height + 6);
+        }
+        setIsFilterDropdownOpen(true);
+      });
+    } else {
+      setIsFilterDropdownOpen(true);
+    }
+  };
 
   return (
     <>
@@ -91,60 +106,62 @@ export const Header: React.FC<HeaderProps> = ({
           </TouchableOpacity>
 
           {/* Right: Multi-Select Filter Button */}
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: isFiltered
-                  ? isDark
-                    ? 'rgba(200, 142, 62, 0.18)'
-                    : 'rgba(181, 129, 76, 0.14)'
-                  : isDark
-                  ? 'rgba(38, 33, 28, 0.65)'
-                  : 'rgba(255, 255, 255, 0.85)',
-                borderColor: isFiltered
-                  ? colors.primary
-                  : isDark
-                  ? 'rgba(60, 52, 44, 0.7)'
-                  : 'rgba(235, 229, 220, 0.9)',
-              },
-            ]}
-            onPress={() => setIsFilterDropdownOpen(true)}
-            activeOpacity={0.75}
-            accessibilityLabel="Filter bookmarks by platform"
-            accessibilityRole="button"
-          >
-            <SlidersHorizontal
-              size={13}
-              color={isFiltered ? colors.primary : colors.textBody}
-              strokeWidth={2}
-            />
-            <Text
+          <View ref={filterBtnRef} collapsable={false}>
+            <TouchableOpacity
               style={[
-                styles.filterButtonText,
+                styles.filterButton,
                 {
-                  color: isFiltered ? colors.primary : colors.textHeading,
-                  fontWeight: isFiltered ? '700' : '600',
+                  backgroundColor: isFiltered
+                    ? isDark
+                      ? 'rgba(200, 142, 62, 0.18)'
+                      : 'rgba(181, 129, 76, 0.14)'
+                    : isDark
+                    ? 'rgba(38, 33, 28, 0.65)'
+                    : 'rgba(255, 255, 255, 0.85)',
+                  borderColor: isFiltered
+                    ? colors.primary
+                    : isDark
+                    ? 'rgba(60, 52, 44, 0.7)'
+                    : 'rgba(235, 229, 220, 0.9)',
                 },
               ]}
-              numberOfLines={1}
+              onPress={handleOpenDropdown}
+              activeOpacity={0.75}
+              accessibilityLabel="Filter bookmarks by platform"
+              accessibilityRole="button"
             >
-              {filterButtonLabel}
-            </Text>
-            <ChevronDown
-              size={12}
-              color={isFiltered ? colors.primary : colors.textMuted}
-              strokeWidth={2.2}
-            />
-            {isFiltered && (
-              <View
-                style={[
-                  styles.filterActiveDot,
-                  { backgroundColor: colors.primary },
-                ]}
+              <SlidersHorizontal
+                size={13}
+                color={isFiltered ? colors.primary : colors.textBody}
+                strokeWidth={2}
               />
-            )}
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  {
+                    color: isFiltered ? colors.primary : colors.textHeading,
+                    fontWeight: isFiltered ? '700' : '600',
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {filterButtonLabel}
+              </Text>
+              <ChevronDown
+                size={12}
+                color={isFiltered ? colors.primary : colors.textMuted}
+                strokeWidth={2.2}
+              />
+              {isFiltered && (
+                <View
+                  style={[
+                    styles.filterActiveDot,
+                    { backgroundColor: colors.primary },
+                  ]}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -163,7 +180,7 @@ export const Header: React.FC<HeaderProps> = ({
             style={[
               styles.dropdownCard,
               {
-                top: Math.max(insets.top, 8) + 98,
+                top: dropdownTop,
                 backgroundColor: isDark ? '#161310' : '#FAF8F5',
                 borderColor: isDark
                   ? 'rgba(200, 142, 62, 0.25)'
@@ -334,10 +351,11 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 10,
+    width: '100%',
+    paddingTop: 6,
+    paddingBottom: 14,
     borderBottomWidth: 1,
+    marginBottom: 8,
   },
   searchRow: {
     width: '100%',
