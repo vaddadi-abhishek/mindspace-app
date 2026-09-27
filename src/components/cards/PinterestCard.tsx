@@ -1,0 +1,168 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Linking,
+} from 'react-native';
+import { Bookmark as SaveIcon, MoreVertical } from 'lucide-react-native';
+import { useTheme } from '../../context/ThemeContext';
+import type { Bookmark, PinterestCardData } from '../../types/bookmark';
+import {
+  sanitizeUrl,
+  parseCardData,
+  formatNumber,
+} from '../../utils/helpers';
+
+interface PinterestCardProps {
+  bookmark: Bookmark;
+  onOpenMenu: (bookmark: Bookmark) => void;
+  onViewAiContext?: (bookmark: Bookmark) => void;
+}
+
+export const PinterestCard: React.FC<PinterestCardProps> = ({
+  bookmark,
+  onOpenMenu,
+  onViewAiContext,
+}) => {
+  const { colors } = useTheme();
+  const cardData = parseCardData<PinterestCardData>(bookmark.card_data);
+
+  const media = cardData?.media || [];
+  const imageUrl = media[0]?.url || cardData?.video_thumbnail || bookmark.snapshot_url;
+  const metrics = cardData?.metrics || {};
+
+  const handleOpenPin = () => {
+    const clean = sanitizeUrl(bookmark.url);
+    if (clean) Linking.openURL(clean).catch(() => {});
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.92}
+      onPress={handleOpenPin}
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          shadowColor: colors.shadow,
+        },
+      ]}
+    >
+      {imageUrl && (
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: imageUrl }} style={styles.pinImage} resizeMode="cover" />
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.floatingMenu}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <View style={styles.body}>
+        <Text style={[styles.title, { color: colors.textHeading }]} numberOfLines={2}>
+          {bookmark.title || bookmark.url}
+        </Text>
+
+        <View style={styles.bottomRow}>
+          <View style={styles.sourceRow}>
+            {bookmark.logo ? (
+              <Image source={{ uri: bookmark.logo }} style={styles.logo} />
+            ) : null}
+            <Text style={[styles.sourceText, { color: colors.textMuted }]} numberOfLines={1}>
+              {bookmark.site_name || 'Pinterest'}
+            </Text>
+          </View>
+
+          {Boolean(metrics.saves) && (
+            <View style={styles.savesRow}>
+              <SaveIcon size={12} color="#E60023" />
+              <Text style={[styles.savesText, { color: colors.textHeading }]}>
+                {formatNumber(metrics.saves)}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginVertical: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#EBE5DC',
+    position: 'relative',
+  },
+  pinImage: {
+    width: '100%',
+    height: '100%',
+  },
+  floatingMenu: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderRadius: 14,
+    padding: 6,
+  },
+  body: {
+    padding: 12,
+    gap: 6,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 19,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  logo: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  sourceText: {
+    fontSize: 11.5,
+    fontWeight: '500',
+  },
+  savesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  savesText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+});

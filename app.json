@@ -1,17 +1,21 @@
 {
   "expo": {
-    "name": "mindspace-app",
-    "slug": "mindspace-app",
+    "name": "Mindspace",
+    "slug": "mindspace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FAF8F5",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mindspace.app"
     },
     "android": {
+      "package": "com.mindspace.app",
+      "backgroundColor": "#FAF8F5",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FAF8F5",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
