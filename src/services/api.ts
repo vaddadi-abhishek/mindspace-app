@@ -439,11 +439,35 @@ export async function updateUserProfile(username: string): Promise<{ user: AuthU
   });
 }
 
-export async function changeUserPassword(password: string): Promise<{ message: string }> {
+export async function changeUserPassword(
+  password: string,
+  currentPassword?: string
+): Promise<{ message: string }> {
   return request<{ message: string }>('/auth/password', {
     method: 'PATCH',
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ password, currentPassword }),
   });
+}
+
+export async function verifyCurrentPassword(
+  email: string,
+  password: string
+): Promise<boolean> {
+  try {
+    const baseUrl = await getActiveApiBaseUrl();
+    const res = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      return false;
+    }
+    const data = await res.json();
+    return Boolean(data.token);
+  } catch {
+    return false;
+  }
 }
 
 export async function deleteUserAccount(): Promise<{ message: string }> {

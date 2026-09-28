@@ -10,7 +10,8 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { SlidersHorizontal, ChevronDown, Check, Sparkles, X } from 'lucide-react-native';
+import { SlidersHorizontal, ChevronDown, Check, Sparkles, X, Plus } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
 import { PLATFORM_TABS, type PlatformType } from '../../utils/helpers';
 import type { UserPlanInfo } from '../../types/bookmark';
@@ -24,6 +25,7 @@ interface HeaderProps {
   platformCounts: Record<string, number>;
   planInfo: UserPlanInfo | null;
   onOpenSettings?: () => void;
+  onOpenAddModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,8 +36,10 @@ export const Header: React.FC<HeaderProps> = ({
   onResetPlatforms,
   platformCounts,
   planInfo,
+  onOpenAddModal,
 }) => {
   const { colors, isDark } = useTheme();
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [dropdownTop, setDropdownTop] = useState(100);
   const filterBtnRef = useRef<View>(null);
@@ -58,10 +62,21 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* Top Search Bar Row (Matching Figma Design) */}
+      {/* Top Search Bar Row (Matching Frontend & Figma Design) */}
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Left: Serif Italic Search Input */}
-        <View style={styles.searchInputWrap}>
+        {/* Left: Serif Italic Search Input with Underline */}
+        <View
+          style={[
+            styles.searchInputWrap,
+            {
+              borderBottomColor: isSearchFocused
+                ? colors.primary
+                : isDark
+                ? 'rgba(200, 142, 62, 0.3)'
+                : 'rgba(181, 129, 76, 0.3)',
+            },
+          ]}
+        >
           <TextInput
             style={[
               styles.searchInput,
@@ -72,9 +87,11 @@ export const Header: React.FC<HeaderProps> = ({
             ]}
             value={searchTerm}
             onChangeText={onSearchChange}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Search your mind..."
             placeholderTextColor={
-              isDark ? 'rgba(126, 117, 105, 0.65)' : 'rgba(140, 131, 119, 0.65)'
+              isDark ? 'rgba(126, 117, 105, 0.7)' : 'rgba(140, 131, 119, 0.7)'
             }
             autoCorrect={false}
             autoCapitalize="none"
@@ -88,29 +105,64 @@ export const Header: React.FC<HeaderProps> = ({
               accessibilityLabel="Clear search"
               accessibilityRole="button"
             >
-              <X size={16} color={colors.textMuted} strokeWidth={2.2} />
+              <X size={15} color={colors.textMuted} strokeWidth={2.2} />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Right: Circular Filter Button (from Figma) */}
-        <View ref={filterBtnRef} collapsable={false}>
-          <TouchableOpacity
-            style={[
-              styles.filterCircleBtn,
-              {
-                backgroundColor: colors.primary,
-                shadowColor: colors.primary,
-              },
-            ]}
-            onPress={handleOpenDropdown}
-            activeOpacity={0.82}
-            accessibilityLabel="Filter bookmarks by platform"
-            accessibilityRole="button"
-          >
-            <SlidersHorizontal size={17} color="#FFFFFF" strokeWidth={2.3} />
-            {isFiltered && <View style={styles.activeDot} />}
-          </TouchableOpacity>
+        {/* Right Section: + Save Link Button & Platform Filter Button */}
+        <View style={styles.headerRightActions}>
+          {onOpenAddModal && (
+            <TouchableOpacity
+              style={styles.saveLinkBtn}
+              onPress={onOpenAddModal}
+              activeOpacity={0.85}
+              accessibilityLabel="Save link"
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={isDark ? ['#C88E3E', '#996533'] : ['#B5814C', '#996533']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.saveLinkGradient}
+              >
+                <Plus size={15} color="#FAF8F5" strokeWidth={2.6} />
+                <Text style={styles.saveLinkText}>Save Link</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+
+          {/* Circular Filter Button */}
+          <View ref={filterBtnRef} collapsable={false}>
+            <TouchableOpacity
+              style={[
+                styles.filterCircleBtn,
+                {
+                  backgroundColor: isFiltered
+                    ? colors.primary
+                    : isDark
+                    ? 'rgba(200, 142, 62, 0.15)'
+                    : 'rgba(181, 129, 76, 0.12)',
+                  borderColor: isFiltered
+                    ? colors.primary
+                    : isDark
+                    ? 'rgba(200, 142, 62, 0.35)'
+                    : 'rgba(181, 129, 76, 0.3)',
+                },
+              ]}
+              onPress={handleOpenDropdown}
+              activeOpacity={0.82}
+              accessibilityLabel="Filter bookmarks by platform"
+              accessibilityRole="button"
+            >
+              <SlidersHorizontal
+                size={16}
+                color={isFiltered ? '#FFFFFF' : colors.primary}
+                strokeWidth={2.2}
+              />
+              {isFiltered && <View style={styles.activeDot} />}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -324,43 +376,76 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 8,
     paddingBottom: 12,
+    gap: 8,
   },
   searchInputWrap: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    borderBottomWidth: 1.5,
+    paddingBottom: 4,
+    minHeight: 38,
   },
   searchInput: {
     flex: 1,
-    fontSize: 22,
+    fontSize: 18,
     fontStyle: 'italic',
     paddingVertical: 2,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   clearBtn: {
-    padding: 4,
-    marginLeft: 6,
+    padding: 3,
+    marginLeft: 4,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flexShrink: 0,
+  },
+  saveLinkBtn: {
+    borderRadius: 20,
+    shadowColor: '#B5814C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.28,
+    shadowRadius: 5,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  saveLinkGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.5,
+    paddingHorizontal: 11,
+    paddingVertical: 7.5,
+    borderRadius: 20,
+  },
+  saveLinkText: {
+    color: '#FAF8F5',
+    fontSize: 12.5,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   filterCircleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
   },
   activeDot: {
     position: 'absolute',
     top: 2,
     right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#B5814C',

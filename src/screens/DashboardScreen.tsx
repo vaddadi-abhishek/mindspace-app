@@ -24,25 +24,22 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useShareIntent } from 'expo-share-intent';
 import {
   findDuplicateBookmark,
-  matchesPlatform,
   extractUrlFromText,
-  PLATFORM_TABS,
-  type PlatformType,
 } from '../utils/helpers';
 
-import { Header } from '../components/ui/Header';
+import { HomeHeader } from '../components/ui/HomeHeader';
 import { ToastHud, type ToastItem } from '../components/ui/ToastHud';
 import { FloatingBadge } from '../components/ui/FloatingBadge';
 import { BookmarkCard } from '../components/cards/BookmarkCard';
-import { BottomNavBar, type BottomNavTab } from '../components/ui/BottomNavBar';
+import { FloatingNavBar, type FloatingNavTab } from '../components/ui/FloatingNavBar';
 
 import { AddBookmarkModal } from '../components/modals/AddBookmarkModal';
 import { CardActionSheet } from '../components/modals/CardActionSheet';
 import { AiContextModal } from '../components/modals/AiContextModal';
 import { ReaderModal } from '../components/modals/ReaderModal';
 import { DeleteConfirmModal } from '../components/modals/DeleteConfirmModal';
+import { SearchScreen } from './SearchScreen';
 import { NotificationsScreen } from './NotificationsScreen';
-import { SettingsScreen } from './SettingsScreen';
 import { ProfileScreen } from './ProfileScreen';
 
 export const DashboardScreen: React.FC = () => {
@@ -58,10 +55,6 @@ export const DashboardScreen: React.FC = () => {
   // Plan info (tokens / credits)
   const [planInfo, setPlanInfo] = useState<UserPlanInfo | null>(null);
   const [autoAiContext, setAutoAiContext] = useState(true);
-
-  // Search & Multi-select Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformType[]>(['all']);
 
   // Generating AI tracking
   const [generatingAiIds, setGeneratingAiIds] = useState<Set<string>>(new Set());
@@ -114,11 +107,11 @@ export const DashboardScreen: React.FC = () => {
   const [selectedBookmarkForReader, setSelectedBookmarkForReader] = useState<Bookmark | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  // Bottom Nav Bar active tab
-  const [activeTab, setActiveTab] = useState<BottomNavTab>('home');
+  // Floating Nav Bar active tab (home, notifications, profile)
+  const [activeTab, setActiveTab] = useState<FloatingNavTab>('home');
 
   const handleSelectTab = useCallback(
-    (tab: BottomNavTab) => {
+    (tab: FloatingNavTab) => {
       setActiveTab(tab);
     },
     []
@@ -294,71 +287,7 @@ export const DashboardScreen: React.FC = () => {
     }
   }, [hasShareIntent, shareIntent, addToast, resetShareIntent]);
 
-  // Platform Counts
-  const platformCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: bookmarks.length };
-    bookmarks.forEach((bm) => {
-      PLATFORM_TABS.forEach((tab) => {
-        if (tab.id !== 'all' && matchesPlatform(bm, tab.id)) {
-          counts[tab.id] = (counts[tab.id] || 0) + 1;
-        }
-      });
-    });
-    return counts;
-  }, [bookmarks]);
 
-  // Multi-select toggle platform
-  const handleTogglePlatform = useCallback((platform: PlatformType) => {
-    if (platform === 'all') {
-      setSelectedPlatforms(['all']);
-      return;
-    }
-
-    setSelectedPlatforms((prev) => {
-      const withoutAll = prev.filter((p) => p !== 'all');
-      if (withoutAll.includes(platform)) {
-        const next = withoutAll.filter((p) => p !== platform);
-        return next.length === 0 ? ['all'] : next;
-      } else {
-        return [...withoutAll, platform];
-      }
-    });
-  }, []);
-
-  const handleResetPlatforms = useCallback(() => {
-    setSelectedPlatforms(['all']);
-  }, []);
-
-  // Filter & Search
-  const isAllSelected =
-    selectedPlatforms.length === 0 || selectedPlatforms.includes('all');
-
-  const filteredBookmarks = useMemo(() => {
-    let result = bookmarks;
-
-    // Platform multi-select filter
-    if (!isAllSelected) {
-      result = result.filter((bm) =>
-        selectedPlatforms.some((platform) => matchesPlatform(bm, platform))
-      );
-    }
-
-    // Search query
-    const q = searchTerm.trim().toLowerCase();
-    if (q) {
-      result = result.filter((bm) => {
-        const titleMatch = (bm.title || '').toLowerCase().includes(q);
-        const descMatch = (bm.description || '').toLowerCase().includes(q);
-        const urlMatch = (bm.url || '').toLowerCase().includes(q);
-        const siteMatch = (bm.site_name || '').toLowerCase().includes(q);
-        const catMatch = (bm.ai_category || []).some((c) => c.toLowerCase().includes(q));
-        const tagMatch = (bm.ai_tags || []).some((t) => t.toLowerCase().includes(q));
-        return titleMatch || descMatch || urlMatch || siteMatch || catMatch || tagMatch;
-      });
-    }
-
-    return result;
-  }, [bookmarks, selectedPlatforms, isAllSelected, searchTerm]);
 
   return (
     <SafeAreaView
@@ -366,10 +295,15 @@ export const DashboardScreen: React.FC = () => {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       {/* 1. Home / Bookmark Feed Screen */}
-      {activeTab === 'home' && (
+      <View
+        style={[
+          styles.screenContainer,
+          { display: activeTab === 'home' ? 'flex' : 'none' },
+        ]}
+      >
         <FlatList
           style={styles.feedList}
-          data={filteredBookmarks}
+          data={bookmarks}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <BookmarkCard
@@ -380,20 +314,11 @@ export const DashboardScreen: React.FC = () => {
             />
           )}
           ListHeaderComponent={
-            <Header
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedPlatforms={selectedPlatforms}
-              onTogglePlatform={handleTogglePlatform}
-              onResetPlatforms={handleResetPlatforms}
-              platformCounts={platformCounts}
-              planInfo={planInfo}
-              onOpenSettings={() => setActiveTab('settings')}
-            />
+            <HomeHeader onOpenAddModal={() => setIsAddModalOpen(true)} />
           }
           contentContainerStyle={[
             styles.listContent,
-            filteredBookmarks.length === 0 && styles.listEmptyContent,
+            bookmarks.length === 0 && styles.listEmptyContent,
           ]}
           refreshControl={
             <RefreshControl
@@ -415,73 +340,72 @@ export const DashboardScreen: React.FC = () => {
                   <BookmarkIcon size={32} color={colors.primary} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.textHeading }]}>
-                  {searchTerm || !isAllSelected
-                    ? 'No matching bookmarks'
-                    : 'Your Mindspace is empty'}
+                  Your Mindspace is empty
                 </Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                  {searchTerm || !isAllSelected
-                    ? 'Try searching for something else or clearing filters.'
-                    : 'Tap the "+" button to add your first article, video, or link.'}
+                  Tap "+ Save Link" on the top right to save your first article, video, or social post.
                 </Text>
 
-                {(searchTerm || !isAllSelected) && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSearchTerm('');
-                      setSelectedPlatforms(['all']);
-                    }}
-                    style={[styles.emptyResetBtn, { borderColor: colors.primary }]}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.emptyResetBtnText, { color: colors.primary }]}>
-                      Clear Search & Filters
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {!searchTerm && isAllSelected && (
-                  <TouchableOpacity
-                    onPress={() => setIsAddModalOpen(true)}
-                    style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]}
-                  >
-                    <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
-                    <Text style={styles.emptyAddBtnText}>Save First Link</Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  onPress={() => setIsAddModalOpen(true)}
+                  style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+                  <Text style={styles.emptyAddBtnText}>Save First Link</Text>
+                </TouchableOpacity>
               </View>
             ) : null
           }
         />
-      )}
+      </View>
 
-      {/* 2. Notifications Screen */}
-      {activeTab === 'notifications' && (
+      {/* 2. Search Screen (Dedicated screen with plain background, live card matching, filter button & badges) */}
+      <View
+        style={[
+          styles.screenContainer,
+          { display: activeTab === 'search' ? 'flex' : 'none' },
+        ]}
+      >
+        <SearchScreen
+          bookmarks={bookmarks}
+          onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
+          onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
+          onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
+          planInfo={planInfo}
+        />
+      </View>
+
+      {/* 3. Notifications Screen */}
+      <View
+        style={[
+          styles.screenContainer,
+          { display: activeTab === 'notifications' ? 'flex' : 'none' },
+        ]}
+      >
         <NotificationsScreen
           onShowToast={addToast}
           onNavigateHome={() => setActiveTab('home')}
         />
-      )}
+      </View>
 
-      {/* 3. Settings Screen */}
-      {activeTab === 'settings' && (
-        <SettingsScreen
+      {/* 4. Profile Screen (Settings reside inside Profile) */}
+      <View
+        style={[
+          styles.screenContainer,
+          { display: activeTab === 'profile' ? 'flex' : 'none' },
+        ]}
+      >
+        <ProfileScreen
           planInfo={planInfo}
           onPlanUpdated={loadData}
           onShowToast={addToast}
         />
-      )}
+      </View>
 
-      {/* 4. Profile Screen */}
-      {activeTab === 'profile' && (
-        <ProfileScreen onShowToast={addToast} />
-      )}
-
-      {/* Bottom React Native Navbar (Matching Figma) */}
-      <BottomNavBar
+      {/* Floating Capsule Navbar */}
+      <FloatingNavBar
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
-        onOpenAddModal={() => setIsAddModalOpen(true)}
       />
 
       {/* Floating Badges */}
@@ -554,13 +478,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  screenContainer: {
+    flex: 1,
+  },
   feedList: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 10,
-    paddingBottom: 24,
+    paddingBottom: 110,
   },
   listEmptyContent: {
     flexGrow: 1,
