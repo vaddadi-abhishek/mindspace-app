@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const targetFile = path.join(
+// 1. Patch iOS ExpoShareIntentModule.swift
+const iosTargetFile = path.join(
   __dirname,
   '..',
   'node_modules',
@@ -10,8 +11,8 @@ const targetFile = path.join(
   'ExpoShareIntentModule.swift'
 );
 
-if (fs.existsSync(targetFile)) {
-  let content = fs.readFileSync(targetFile, 'utf8');
+if (fs.existsSync(iosTargetFile)) {
+  let content = fs.readFileSync(iosTargetFile, 'utf8');
   if (!content.includes('setAppGroupValue')) {
     const targetAnchor = 'Function("clearShareIntent") { (sharedKey: String) in';
     const injection = `        Function("setAppGroupValue") { (key: String, value: String) in
@@ -30,7 +31,45 @@ if (fs.existsSync(targetFile)) {
         ${targetAnchor}`;
 
     content = content.replace(targetAnchor, injection);
-    fs.writeFileSync(targetFile, content, 'utf8');
+    fs.writeFileSync(iosTargetFile, content, 'utf8');
     console.log('[patch-share-intent] Successfully injected setAppGroupValue into ExpoShareIntentModule.swift');
+  }
+}
+
+// 2. Patch Android ExpoShareIntentModule.kt
+const androidTargetFile = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  'expo-share-intent',
+  'android',
+  'src',
+  'main',
+  'java',
+  'expo',
+  'modules',
+  'shareintent',
+  'ExpoShareIntentModule.kt'
+);
+
+if (fs.existsSync(androidTargetFile)) {
+  let content = fs.readFileSync(androidTargetFile, 'utf8');
+  if (!content.includes('setAppGroupValue')) {
+    const targetAnchor = 'Function("clearShareIntent") { _: String ->';
+    const injection = `        Function("setAppGroupValue") { key: String, value: String ->
+            val prefs = context.getSharedPreferences("MindspacePrefs", Context.MODE_PRIVATE)
+            prefs.edit().putString(key, value).apply()
+        }
+
+        Function("getAppGroupValue") { key: String ->
+            val prefs = context.getSharedPreferences("MindspacePrefs", Context.MODE_PRIVATE)
+            prefs.getString(key, null)
+        }
+
+        ${targetAnchor}`;
+
+    content = content.replace(targetAnchor, injection);
+    fs.writeFileSync(androidTargetFile, content, 'utf8');
+    console.log('[patch-share-intent] Successfully injected setAppGroupValue into ExpoShareIntentModule.kt');
   }
 }

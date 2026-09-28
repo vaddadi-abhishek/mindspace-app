@@ -19,7 +19,7 @@ export function syncCredentialsToAppGroup(
   apiUrl: string,
   autoAi: boolean
 ): void {
-  if (Platform.OS !== 'ios' || !ShareIntentModule) return;
+  if (!ShareIntentModule) return;
   try {
     if (token) {
       (ShareIntentModule as any).setAppGroupValue?.('mindspace_auth_token', token);
@@ -37,10 +37,10 @@ export function syncCredentialsToAppGroup(
 }
 
 /**
- * Retrieves any pending bookmarks saved by the Share Extension while the app was closed.
+ * Retrieves any pending bookmarks saved by the Share Extension / ShareActivity while the app was closed.
  */
 export function getPendingBookmarksFromAppGroup(): PendingSharedBookmark[] {
-  if (Platform.OS !== 'ios' || !ShareIntentModule) return [];
+  if (!ShareIntentModule) return [];
   try {
     const raw = (ShareIntentModule as any).getAppGroupValue?.('pendingBookmarks');
     if (!raw) return [];
@@ -52,10 +52,10 @@ export function getPendingBookmarksFromAppGroup(): PendingSharedBookmark[] {
 }
 
 /**
- * Clears the pending bookmarks queue in the shared AppGroup.
+ * Clears the pending bookmarks queue in the shared storage.
  */
 export function clearPendingBookmarksInAppGroup(): void {
-  if (Platform.OS !== 'ios' || !ShareIntentModule) return;
+  if (!ShareIntentModule) return;
   try {
     (ShareIntentModule as any).setAppGroupValue?.('pendingBookmarks', '[]');
   } catch (err) {
