@@ -6,6 +6,7 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
+  AppState,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bookmark as BookmarkIcon, Plus } from 'lucide-react-native';
@@ -26,6 +27,10 @@ import {
   findDuplicateBookmark,
   extractUrlFromText,
 } from '../utils/helpers';
+import {
+  getPendingBookmarksFromAppGroup,
+  clearPendingBookmarksInAppGroup,
+} from '../services/appGroupSync';
 
 import { HomeHeader } from '../components/ui/HomeHeader';
 import { ToastHud, type ToastItem } from '../components/ui/ToastHud';
@@ -286,6 +291,26 @@ export const DashboardScreen: React.FC = () => {
       resetShareIntent();
     }
   }, [hasShareIntent, shareIntent, addToast, resetShareIntent]);
+
+  // Sync any bookmarks saved by the Share Extension while app was closed or in background
+  useEffect(() => {
+    const syncAppGroupBookmarks = () => {
+      const pending = getPendingBookmarksFromAppGroup();
+      if (pending && pending.length > 0) {
+        clearPendingBookmarksInAppGroup();
+        loadData();
+        addToast(`Synced ${pending.length} link(s) saved via Share Sheet!`, 'success');
+      }
+    };
+
+    syncAppGroupBookmarks();
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        syncAppGroupBookmarks();
+      }
+    });
+    return () => sub.remove();
+  }, [loadData, addToast]);
 
 
 

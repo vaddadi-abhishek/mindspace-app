@@ -30,7 +30,8 @@
     "run:ios": "expo run:ios",
     "expo:android": "expo start --android",
     "expo:ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "node scripts/patch-share-intent.js"
   },
   "private": true
 }

@@ -43,5 +43,9 @@ yarn-error.*
 *.tsbuildinfo
 
 # Generated native folders (if prebuild is run)
-/ios
+/ios/*
+!/ios/ShareExtension
+!/ios/Mindspace
+/ios/Mindspace/*
+!/ios/Mindspace/AppDelegate.swift
 /android

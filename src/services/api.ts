@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getActiveApiBaseUrl } from '../constants/config';
+import { syncCredentialsToAppGroup } from './appGroupSync';
 import type {
   Bookmark,
   ArticleContent,
@@ -266,6 +267,9 @@ export async function loginUser(email: string, password: string): Promise<AuthUs
 
   if (data.token) {
     await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+    getActiveApiBaseUrl().then((apiUrl) => {
+      syncCredentialsToAppGroup(data.token!, apiUrl, true);
+    }).catch(() => {});
   }
   if (data.refreshToken) {
     await AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
@@ -294,6 +298,9 @@ export async function signUpUser(
 
   if (data.token) {
     await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+    getActiveApiBaseUrl().then((apiUrl) => {
+      syncCredentialsToAppGroup(data.token!, apiUrl, true);
+    }).catch(() => {});
   }
   if (data.refreshToken) {
     await AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
@@ -359,6 +366,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   try {
     const data = await request<{ user: AuthUser }>('/auth/me', { method: 'GET' });
+    if (token) {
+      getActiveApiBaseUrl().then((apiUrl) => {
+        syncCredentialsToAppGroup(token, apiUrl, true);
+      }).catch(() => {});
+    }
     return data.user;
   } catch {
     await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
@@ -370,6 +382,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 export async function logoutUser(): Promise<void> {
   await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
   await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+  getActiveApiBaseUrl().then((apiUrl) => {
+    syncCredentialsToAppGroup(null, apiUrl, true);
+  }).catch(() => {});
 }
 
 // ==========================================
