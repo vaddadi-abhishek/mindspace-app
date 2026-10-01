@@ -13,9 +13,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Bookmark as BookmarkIcon, ClipboardPaste, X } from 'lucide-react-native';
+import { Bookmark as BookmarkIcon, ClipboardPaste, X, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
-import type { Bookmark } from '../../types/bookmark';
+import type { Bookmark, UserPlanInfo } from '../../types/bookmark';
 
 interface AddBookmarkModalProps {
   visible: boolean;
@@ -23,6 +23,8 @@ interface AddBookmarkModalProps {
   onAddBookmark: (newBookmark: Bookmark) => void;
   autoAiContext: boolean;
   onToggleAutoAiContext: (val: boolean) => void;
+  planInfo?: UserPlanInfo | null;
+  onShowToast?: (message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
 export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
@@ -31,10 +33,23 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
   onAddBookmark,
   autoAiContext,
   onToggleAutoAiContext,
+  planInfo,
+  onShowToast,
 }) => {
   const { colors, isDark } = useTheme();
   const [url, setUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const isPro = planInfo?.is_paid || planInfo?.plan === 'pro';
+  const creditsRemaining = planInfo?.credits_remaining ?? 0;
+  const isZeroCredits = !isPro && planInfo !== null && creditsRemaining <= 0;
+
+  const handleToggleAutoAi = (val: boolean) => {
+    onToggleAutoAiContext(val);
+    if (val && isZeroCredits) {
+      onShowToast?.('No credits left', 'warning');
+    }
+  };
 
   const handlePaste = async () => {
     try {
@@ -196,10 +211,47 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
                       <Text style={[styles.switchSubtitle, { color: colors.textMuted }]}>
                         Generate summary & tags automatically
                       </Text>
+                      <View style={styles.creditsRow}>
+                        <Sparkles
+                          size={11}
+                          color={
+                            isPro
+                              ? colors.primary
+                              : isZeroCredits
+                              ? isDark
+                                ? '#F59E0B'
+                                : '#D97706'
+                              : colors.primary
+                          }
+                          strokeWidth={2.4}
+                        />
+                        <Text
+                          style={[
+                            styles.creditsText,
+                            {
+                              color: isPro
+                                ? colors.primary
+                                : isZeroCredits
+                                ? isDark
+                                  ? '#F59E0B'
+                                  : '#B45309'
+                                : colors.textMuted,
+                            },
+                          ]}
+                        >
+                          {isPro
+                            ? 'Unlimited AI credits'
+                            : planInfo !== null
+                            ? isZeroCredits
+                              ? 'No credits available'
+                              : `${creditsRemaining} credits available`
+                            : '... credits available'}
+                        </Text>
+                      </View>
                     </View>
                     <Switch
                       value={autoAiContext}
-                      onValueChange={onToggleAutoAiContext}
+                      onValueChange={handleToggleAutoAi}
                       trackColor={{ false: colors.border, true: colors.primary }}
                       thumbColor="#FFFFFF"
                     />
@@ -337,6 +389,17 @@ const styles = StyleSheet.create({
   switchSubtitle: {
     fontSize: 12,
     marginTop: 2,
+  },
+  creditsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  creditsText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   submitBtn: {
     height: 48,

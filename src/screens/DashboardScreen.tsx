@@ -34,7 +34,6 @@ import {
 
 import { HomeHeader } from '../components/ui/HomeHeader';
 import { ToastHud, type ToastItem } from '../components/ui/ToastHud';
-import { FloatingBadge } from '../components/ui/FloatingBadge';
 import { BookmarkCard } from '../components/cards/BookmarkCard';
 import { FloatingNavBar, type FloatingNavTab } from '../components/ui/FloatingNavBar';
 
@@ -64,42 +63,34 @@ export const DashboardScreen: React.FC = () => {
   // Generating AI tracking
   const [generatingAiIds, setGeneratingAiIds] = useState<Set<string>>(new Set());
 
-  // Floating Badges (3.2 seconds display)
-  const [showNoCreditsBadge, setShowNoCreditsBadge] = useState(false);
-  const noCreditsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerNoCreditsBadge = useCallback(() => {
-    if (noCreditsTimeoutRef.current) clearTimeout(noCreditsTimeoutRef.current);
-    setShowNoCreditsBadge(true);
-    noCreditsTimeoutRef.current = setTimeout(() => {
-      setShowNoCreditsBadge(false);
-    }, 3200);
-  }, []);
-
-  const [showAlreadyExistsBadge, setShowAlreadyExistsBadge] = useState(false);
-  const alreadyExistsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerAlreadyExistsBadge = useCallback(() => {
-    if (alreadyExistsTimeoutRef.current) clearTimeout(alreadyExistsTimeoutRef.current);
-    setShowAlreadyExistsBadge(true);
-    alreadyExistsTimeoutRef.current = setTimeout(() => {
-      setShowAlreadyExistsBadge(false);
-    }, 3200);
-  }, []);
-
-  // Toasts
+  // Unified Toasts & Badges
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastCounterRef = useRef(0);
 
-  const addToast = useCallback((message: string, type?: 'success' | 'error') => {
-    toastCounterRef.current += 1;
-    const id = `toast_${toastCounterRef.current}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
+  const addToast = useCallback(
+    (message: string, type?: 'success' | 'error' | 'warning' | 'info') => {
+      toastCounterRef.current += 1;
+      const id = `toast_${toastCounterRef.current}`;
+      setToasts((prev) => {
+        // Prevent duplicate messages from stacking awkwardly
+        const filtered = prev.filter((t) => t.message !== message);
+        return [...filtered, { id, message, type }];
+      });
 
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4500);
-  }, []);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 4200);
+    },
+    []
+  );
+
+  const triggerNoCreditsBadge = useCallback(() => {
+    addToast('No credits left', 'warning');
+  }, [addToast]);
+
+  const triggerAlreadyExistsBadge = useCallback(() => {
+    addToast('Link already exists', 'warning');
+  }, [addToast]);
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -450,11 +441,7 @@ export const DashboardScreen: React.FC = () => {
         onSelectTab={handleSelectTab}
       />
 
-      {/* Floating Badges */}
-      <FloatingBadge visible={showNoCreditsBadge} text="No credits left" icon="alert" />
-      <FloatingBadge visible={showAlreadyExistsBadge} text="Link already exists" icon="sparkles" />
-
-      {/* Floating Toast HUD */}
+      {/* Floating Toast HUD (Single Unified Pill Notification Component) */}
       <ToastHud toasts={toasts} onDismiss={dismissToast} />
 
       {/* Modals */}
@@ -464,6 +451,8 @@ export const DashboardScreen: React.FC = () => {
         onAddBookmark={handleAddBookmark}
         autoAiContext={autoAiContext}
         onToggleAutoAiContext={setAutoAiContext}
+        planInfo={planInfo}
+        onShowToast={addToast}
       />
 
       <CardActionSheet
