@@ -1,19 +1,25 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { Plus, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
+import type { UserPlanInfo } from '../../types/bookmark';
 
 interface HomeHeaderProps {
   onOpenAddModal: () => void;
+  planInfo?: UserPlanInfo | null;
 }
 
-export const HomeHeader: React.FC<HomeHeaderProps> = ({ onOpenAddModal }) => {
+export const HomeHeader: React.FC<HomeHeaderProps> = ({ onOpenAddModal, planInfo }) => {
   const { colors, isDark } = useTheme();
+
+  const isPro = planInfo?.is_paid || planInfo?.plan === 'pro';
+  const creditsRemaining = planInfo?.credits_remaining ?? 0;
+  const isZeroCredits = !isPro && planInfo !== null && creditsRemaining <= 0;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Top Left: Mindspace Logo & Title */}
+      {/* Top Left: Mindspace Logo & Title with Credits Indicator */}
       <View style={styles.brandRow}>
         <LinearGradient
           colors={isDark ? ['#C88E3E', '#996533'] : ['#B5814C', '#996533']}
@@ -23,17 +29,56 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ onOpenAddModal }) => {
         >
           <Text style={styles.logoLetter}>M</Text>
         </LinearGradient>
-        <Text
-          style={[
-            styles.brandTitle,
-            {
-              color: colors.textHeading,
-              fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
-            },
-          ]}
-        >
-          Mindspace
-        </Text>
+
+        <View style={styles.brandTextCol}>
+          <Text
+            style={[
+              styles.brandTitle,
+              {
+                color: colors.textHeading,
+                fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
+              },
+            ]}
+          >
+            Mindspace
+          </Text>
+
+          <View style={styles.creditsRow}>
+            <Sparkles
+              size={10.5}
+              color={
+                isPro
+                  ? colors.primary
+                  : isZeroCredits
+                  ? isDark
+                    ? '#F59E0B'
+                    : '#D97706'
+                  : colors.primary
+              }
+              strokeWidth={2.4}
+            />
+            <Text
+              style={[
+                styles.creditsText,
+                {
+                  color: isPro
+                    ? colors.primary
+                    : isZeroCredits
+                    ? isDark
+                      ? '#F59E0B'
+                      : '#B45309'
+                    : colors.textMuted,
+                },
+              ]}
+            >
+              {isPro
+                ? 'Unlimited AI credits'
+                : planInfo !== null
+                ? `${creditsRemaining} credits available`
+                : '... credits available'}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Top Right: Only Save Link Button */}
@@ -65,8 +110,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingTop: 6,
+    paddingBottom: 10,
   },
   brandRow: {
     flexDirection: 'row',
@@ -74,9 +119,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   logoBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     shadowOffset: { width: 0, height: 2 },
@@ -87,12 +132,27 @@ const styles = StyleSheet.create({
   logoLetter: {
     color: '#FAF8F5',
     fontWeight: '800',
-    fontSize: 17,
+    fontSize: 18,
+  },
+  brandTextCol: {
+    justifyContent: 'center',
+    gap: 1,
   },
   brandTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.4,
+    lineHeight: 23,
+  },
+  creditsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  creditsText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   saveLinkBtn: {
     borderRadius: 20,
@@ -118,3 +178,4 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 });
+

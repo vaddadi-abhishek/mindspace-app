@@ -203,6 +203,15 @@ export const DashboardScreen: React.FC = () => {
 
   // Generate AI Context Handler
   const handleGenerateAi = async (bm: Bookmark) => {
+    // If user already has 0 credits on a free plan, show floating pill immediately
+    if (planInfo && !planInfo.is_paid && planInfo.credits_remaining <= 0) {
+      setBookmarks((prev) =>
+        prev.map((b) => (b.id === bm.id ? { ...b, ai_status: 'no_credits' } : b))
+      );
+      triggerNoCreditsBadge();
+      return;
+    }
+
     setGeneratingAiIds((prev) => new Set(prev).add(bm.id));
     try {
       const updated = await generateAiContext(bm.id);
@@ -215,10 +224,16 @@ export const DashboardScreen: React.FC = () => {
     } catch (err: unknown) {
       if (
         err instanceof CreditExhaustedError ||
-        (err instanceof Error && err.message.includes('No free credits'))
+        (err instanceof Error &&
+          (err.message.includes('No free credits') ||
+            err.message.includes('NO_CREDITS_LEFT') ||
+            err.message.includes('credits')))
       ) {
         setBookmarks((prev) =>
           prev.map((b) => (b.id === bm.id ? { ...b, ai_status: 'no_credits' } : b))
+        );
+        setPlanInfo((prev) =>
+          prev ? { ...prev, credits_remaining: 0, credits_used: prev.credits_limit } : prev
         );
         triggerNoCreditsBadge();
       } else {
@@ -326,7 +341,10 @@ export const DashboardScreen: React.FC = () => {
           { display: activeTab === 'home' ? 'flex' : 'none' },
         ]}
       >
-        <HomeHeader onOpenAddModal={() => setIsAddModalOpen(true)} />
+        <HomeHeader
+          onOpenAddModal={() => setIsAddModalOpen(true)}
+          planInfo={planInfo}
+        />
 
         <FlatList
           style={styles.feedList}
@@ -433,8 +451,8 @@ export const DashboardScreen: React.FC = () => {
       />
 
       {/* Floating Badges */}
-      <FloatingBadge visible={showNoCreditsBadge} text="No credits left" />
-      <FloatingBadge visible={showAlreadyExistsBadge} text="Link already exists" />
+      <FloatingBadge visible={showNoCreditsBadge} text="No credits left" icon="alert" />
+      <FloatingBadge visible={showAlreadyExistsBadge} text="Link already exists" icon="sparkles" />
 
       {/* Floating Toast HUD */}
       <ToastHud toasts={toasts} onDismiss={dismissToast} />
