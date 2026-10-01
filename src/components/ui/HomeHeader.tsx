@@ -74,7 +74,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ onOpenAddModal, planInfo
               {isPro
                 ? 'Unlimited AI credits'
                 : planInfo !== null
-                ? `${creditsRemaining} credits available`
+                ? isZeroCredits
+                  ? 'No credits available'
+                  : `${creditsRemaining} credits available`
                 : '... credits available'}
             </Text>
           </View>
