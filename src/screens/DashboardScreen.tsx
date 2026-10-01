@@ -326,6 +326,8 @@ export const DashboardScreen: React.FC = () => {
           { display: activeTab === 'home' ? 'flex' : 'none' },
         ]}
       >
+        <HomeHeader onOpenAddModal={() => setIsAddModalOpen(true)} />
+
         <FlatList
           style={styles.feedList}
           data={bookmarks}
@@ -338,9 +340,6 @@ export const DashboardScreen: React.FC = () => {
               onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
             />
           )}
-          ListHeaderComponent={
-            <HomeHeader onOpenAddModal={() => setIsAddModalOpen(true)} />
-          }
           contentContainerStyle={[
             styles.listContent,
             bookmarks.length === 0 && styles.listEmptyContent,
@@ -511,7 +510,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 4,
     paddingBottom: 110,
   },
   listEmptyContent: {
