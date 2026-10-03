@@ -237,8 +237,16 @@ class ShareActivity : Activity() {
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val token = prefs.getString(KEY_AUTH_TOKEN, null)
-        val rawApiUrl = prefs.getString(KEY_API_URL, null) ?: DEFAULT_API_URL
-        val apiUrl = rawApiUrl.trim().removeSuffix("/")
+        val storedApiUrl = prefs.getString(KEY_API_URL, null)
+
+        // Security: In production/release builds, strictly enforce the hardcoded production API endpoint
+        // to prevent rogue URL redirection and token harvesting.
+        val apiUrl = if (!BuildConfig.DEBUG) {
+            DEFAULT_API_URL
+        } else {
+            val candidate = (storedApiUrl ?: DEFAULT_API_URL).trim().removeSuffix("/")
+            if (candidate.startsWith("https://") || candidate.startsWith("http://")) candidate else DEFAULT_API_URL
+        }
         val autoAi = prefs.getString(KEY_AUTO_AI, "true") != "false"
 
         val endpointUrl = "$apiUrl/bookmarks"

@@ -766,7 +766,14 @@ class ShareViewController: UIViewController, UNUserNotificationCenterDelegate {
     }
 
     let authToken = userDefaults.string(forKey: "mindspace_auth_token")
-    let apiUrl = userDefaults.string(forKey: "mindspace_api_url") ?? "https://mindspace-link-web-scrapper.onrender.com/api/v1"
+    let storedApiUrl = userDefaults.string(forKey: "mindspace_api_url")
+    let defaultApiUrl = "https://mindspace-link-web-scrapper.onrender.com/api/v1"
+    #if !DEBUG
+    let apiUrl = defaultApiUrl
+    #else
+    let candidate = (storedApiUrl ?? defaultApiUrl).trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+    let apiUrl = (candidate.hasPrefix("https://") || candidate.hasPrefix("http://")) ? candidate : defaultApiUrl
+    #endif
     let autoAi = userDefaults.string(forKey: "mindspace_auto_ai") != "false"
 
     guard let endpoint = URL(string: "\(apiUrl)/bookmarks") else {
