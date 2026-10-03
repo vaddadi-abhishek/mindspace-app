@@ -20,6 +20,7 @@ import {
   deleteBookmark,
   getUserPlan,
   CreditExhaustedError,
+  validateAndFormatUrl,
 } from '../services/api';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useShareIntent } from 'expo-share-intent';
@@ -272,7 +273,15 @@ export const DashboardScreen: React.FC = () => {
       (shareIntent.text && /^https?:\/\//i.test(shareIntent.text.trim()) ? shareIntent.text.trim() : null);
 
     if (rawCandidate) {
-      const targetUrl = rawCandidate.trim();
+      const trimmed = rawCandidate.trim();
+      let targetUrl: string;
+      try {
+        targetUrl = validateAndFormatUrl(trimmed);
+      } catch {
+        resetShareIntent();
+        return;
+      }
+
       let sourceName = 'Shared Link';
       try {
         const parsed = new URL(targetUrl);

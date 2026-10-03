@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { getActiveApiBaseUrl } from '../constants/config';
 import { syncCredentialsToAppGroup } from './appGroupSync';
 import type {
@@ -11,6 +12,75 @@ import type {
 
 export const AUTH_TOKEN_KEY = 'mindspace_auth_token';
 export const AUTH_REFRESH_TOKEN_KEY = 'mindspace_refresh_token';
+
+/**
+ * Reads token from hardware-backed SecureStore, with a transparent one-time
+ * migration from legacy AsyncStorage for existing logged-in sessions.
+ */
+export async function getSecureAuthToken(): Promise<string | null> {
+  try {
+    let token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+    if (!token) {
+      token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) {
+        await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+        await AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {});
+      }
+    }
+    return token;
+  } catch (err) {
+    console.warn('[SecureStore] Failed to read auth token:', err);
+    return null;
+  }
+}
+
+export async function setSecureAuthToken(token: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+    await AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {});
+  } catch (err) {
+    console.warn('[SecureStore] Failed to save auth token:', err);
+  }
+}
+
+export async function getSecureRefreshToken(): Promise<string | null> {
+  try {
+    let refreshToken = await SecureStore.getItemAsync(AUTH_REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
+      refreshToken = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+      if (refreshToken) {
+        await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+        await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY).catch(() => {});
+      }
+    }
+    return refreshToken;
+  } catch (err) {
+    console.warn('[SecureStore] Failed to read refresh token:', err);
+    return null;
+  }
+}
+
+export async function setSecureRefreshToken(refreshToken: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, refreshToken);
+    await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY).catch(() => {});
+  } catch (err) {
+    console.warn('[SecureStore] Failed to save refresh token:', err);
+  }
+}
+
+export async function removeSecureTokens(): Promise<void> {
+  try {
+    await Promise.all([
+      SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {}),
+      SecureStore.deleteItemAsync(AUTH_REFRESH_TOKEN_KEY).catch(() => {}),
+      AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {}),
+      AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY).catch(() => {}),
+    ]);
+  } catch (err) {
+    console.warn('[SecureStore] Failed to remove tokens:', err);
+  }
+}
 
 /**
  * Custom error thrown when the user's AI processing credits have been exhausted.
@@ -89,7 +159,7 @@ export function isTokenExpired(
 }
 
 /**
- * Returns authentication headers containing Bearer token from AsyncStorage.
+ * Returns authentication headers containing Bearer token from SecureStore.
  */
 async function getAuthHeaders(customHeaders?: Record<string, string>): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
@@ -97,7 +167,7 @@ async function getAuthHeaders(customHeaders?: Record<string, string>): Promise<R
     ...(customHeaders || {}),
   };
 
-  const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+  const token = await getSecureAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -106,16 +176,29 @@ async function getAuthHeaders(customHeaders?: Record<string, string>): Promise<R
 }
 
 /**
- * Validates and formats a URL string, ensuring http/https protocol.
+ * Validates and formats a URL string, strictly ensuring http/https protocol and
+ * rejecting non-standard schemes (file://, content://, javascript:, data:, blob:).
  */
-function validateAndFormatUrl(rawUrl: string): string {
+export function validateAndFormatUrl(rawUrl: string): string {
   const cleanUrl = rawUrl.trim();
   if (!cleanUrl) {
     throw new Error('Target URL cannot be empty');
   }
 
+  const lower = cleanUrl.toLowerCase();
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('file:') ||
+    lower.startsWith('content:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('blob:') ||
+    lower.startsWith('vbscript:')
+  ) {
+    throw new Error('Unsupported URL protocol. Only http and https are allowed.');
+  }
+
   const formatted =
-    cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
+    lower.startsWith('http://') || lower.startsWith('https://')
       ? cleanUrl
       : `https://${cleanUrl}`;
 
@@ -124,26 +207,33 @@ function validateAndFormatUrl(rawUrl: string): string {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       throw new Error('Invalid URL protocol. Only http and https are supported.');
     }
+    if (!parsed.hostname || parsed.hostname.trim().length === 0) {
+      throw new Error('Invalid URL: missing valid host.');
+    }
     return parsed.href;
-  } catch {
-    throw new Error('Invalid URL format');
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Invalid URL format';
+    throw new Error(msg);
   }
 }
 
-// Track ongoing refresh promise to prevent parallel stampeding refresh requests
+// Track ongoing refresh promise to prevent parallel stampeding refresh requests (Single-Flight Mutex)
 let refreshPromise: Promise<boolean> | null = null;
 
-export async function attemptTokenRefresh(): Promise<boolean> {
-  const refreshToken = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
-  if (!refreshToken) return false;
-
-  // Single-flight deduplication
+export function attemptTokenRefresh(): Promise<boolean> {
+  // If a refresh is already in-flight, return the single active promise immediately (synchronous mutex guard)
   if (refreshPromise) {
     return refreshPromise;
   }
 
   refreshPromise = (async () => {
     try {
+      const refreshToken = await getSecureRefreshToken();
+      if (!refreshToken) {
+        await removeSecureTokens();
+        return false;
+      }
+
       const baseUrl = await getActiveApiBaseUrl();
       const response = await fetch(`${baseUrl}/auth/refresh`, {
         method: 'POST',
@@ -152,16 +242,15 @@ export async function attemptTokenRefresh(): Promise<boolean> {
       });
 
       if (!response.ok) {
-        await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-        await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+        await removeSecureTokens();
         return false;
       }
 
       const data = (await response.json()) as { token?: string; refreshToken?: string };
       if (data.token) {
-        await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+        await setSecureAuthToken(data.token);
         if (data.refreshToken) {
-          await AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
+          await setSecureRefreshToken(data.refreshToken);
         }
         return true;
       }
@@ -199,8 +288,8 @@ async function request<T>(
 
   // Proactive refresh if access token is expired or close to expiring
   if (!shouldBypassAuthRefresh) {
-    const currentToken = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-    const refreshToken = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+    const currentToken = await getSecureAuthToken();
+    const refreshToken = await getSecureRefreshToken();
     if (currentToken && refreshToken && isTokenExpired(currentToken, 60)) {
       await attemptTokenRefresh();
     }
@@ -266,13 +355,13 @@ export async function loginUser(email: string, password: string): Promise<AuthUs
   });
 
   if (data.token) {
-    await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+    await setSecureAuthToken(data.token);
     getActiveApiBaseUrl().then((apiUrl) => {
       syncCredentialsToAppGroup(data.token!, apiUrl, true);
     }).catch(() => {});
   }
   if (data.refreshToken) {
-    await AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
+    await setSecureRefreshToken(data.refreshToken);
   }
   return data.user;
 }
@@ -297,13 +386,13 @@ export async function signUpUser(
   });
 
   if (data.token) {
-    await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+    await setSecureAuthToken(data.token);
     getActiveApiBaseUrl().then((apiUrl) => {
       syncCredentialsToAppGroup(data.token!, apiUrl, true);
     }).catch(() => {});
   }
   if (data.refreshToken) {
-    await AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
+    await setSecureRefreshToken(data.refreshToken);
   }
   return data;
 }
@@ -324,10 +413,10 @@ export async function verifyOtpUser(
   });
 
   if (data.token) {
-    await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
+    await setSecureAuthToken(data.token);
   }
   if (data.refreshToken) {
-    await AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, data.refreshToken);
+    await setSecureRefreshToken(data.refreshToken);
   }
   return data;
 }
@@ -350,38 +439,36 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-  const refreshToken = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+  const token = await getSecureAuthToken();
+  const refreshToken = await getSecureRefreshToken();
 
   if (!token && !refreshToken) return null;
 
   if ((!token || isTokenExpired(token, 60)) && refreshToken) {
     const refreshed = await attemptTokenRefresh();
     if (!refreshed) {
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-      await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+      await removeSecureTokens();
       return null;
     }
   }
 
   try {
     const data = await request<{ user: AuthUser }>('/auth/me', { method: 'GET' });
-    if (token) {
+    const currentToken = await getSecureAuthToken();
+    if (currentToken) {
       getActiveApiBaseUrl().then((apiUrl) => {
-        syncCredentialsToAppGroup(token, apiUrl, true);
+        syncCredentialsToAppGroup(currentToken, apiUrl, true);
       }).catch(() => {});
     }
     return data.user;
   } catch {
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-    await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+    await removeSecureTokens();
     return null;
   }
 }
 
 export async function logoutUser(): Promise<void> {
-  await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-  await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
+  await removeSecureTokens();
   getActiveApiBaseUrl().then((apiUrl) => {
     syncCredentialsToAppGroup(null, apiUrl, true);
   }).catch(() => {});

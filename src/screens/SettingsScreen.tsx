@@ -107,20 +107,26 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   const handleSaveBackendUrl = async () => {
+    if (!__DEV__) {
+      onShowToast('Server URL cannot be modified in production', 'error');
+      return;
+    }
     if (!backendUrl.trim()) return;
     setSavingUrl(true);
     try {
       await setActiveApiBaseUrl(backendUrl.trim());
       onShowToast('Backend URL updated', 'success');
       onPlanUpdated();
-    } catch {
-      onShowToast('Failed to save URL', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save URL';
+      onShowToast(msg, 'error');
     } finally {
       setSavingUrl(false);
     }
   };
 
   const handleResetBackendUrl = async () => {
+    if (!__DEV__) return;
     await resetActiveApiBaseUrl();
     const defaultUrl = await getActiveApiBaseUrl();
     setBackendUrl(defaultUrl);
@@ -354,54 +360,66 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 ]}
               >
                 <TextInput
-                  style={[styles.urlInput, { color: colors.textHeading }]}
-                  value={backendUrl}
+                  style={[
+                    styles.urlInput,
+                    { color: colors.textHeading, opacity: __DEV__ ? 1 : 0.6 },
+                  ]}
+                  value={__DEV__ ? backendUrl : DEFAULT_PRODUCTION_API_URL}
                   onChangeText={setBackendUrl}
+                  editable={__DEV__}
                   autoCapitalize="none"
                   autoCorrect={false}
                   placeholder="http://localhost:3000/api/v1"
                   placeholderTextColor={colors.textMuted}
                 />
-                <TouchableOpacity
-                  onPress={handleSaveBackendUrl}
-                  style={[styles.saveUrlBtn, { backgroundColor: colors.primary }]}
-                  disabled={savingUrl}
-                >
-                  {savingUrl ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Check size={14} color="#FFFFFF" />
-                  )}
-                </TouchableOpacity>
+                {__DEV__ && (
+                  <TouchableOpacity
+                    onPress={handleSaveBackendUrl}
+                    style={[styles.saveUrlBtn, { backgroundColor: colors.primary }]}
+                    disabled={savingUrl}
+                  >
+                    {savingUrl ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Check size={14} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
 
-              <View style={styles.presetButtonsRow}>
-                <TouchableOpacity
-                  onPress={() => setBackendUrl(DEFAULT_LOCAL_API_URL)}
-                  style={[styles.presetBtn, { borderColor: colors.border }]}
-                >
-                  <Text style={[styles.presetBtnText, { color: colors.textMuted }]}>
-                    Local
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setBackendUrl(DEFAULT_PRODUCTION_API_URL)}
-                  style={[styles.presetBtn, { borderColor: colors.border }]}
-                >
-                  <Text style={[styles.presetBtnText, { color: colors.textMuted }]}>
-                    Production
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleResetBackendUrl}
-                  style={[styles.presetBtn, { borderColor: colors.border }]}
-                >
-                  <RefreshCw size={11} color={colors.textMuted} style={{ marginRight: 4 }} />
-                  <Text style={[styles.presetBtnText, { color: colors.textMuted }]}>
-                    Reset
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              {__DEV__ ? (
+                <View style={styles.presetButtonsRow}>
+                  <TouchableOpacity
+                    onPress={() => setBackendUrl(DEFAULT_LOCAL_API_URL)}
+                    style={[styles.presetBtn, { borderColor: colors.border }]}
+                  >
+                    <Text style={[styles.presetBtnText, { color: colors.textMuted }]}>
+                      Local
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setBackendUrl(DEFAULT_PRODUCTION_API_URL)}
+                    style={[styles.presetBtn, { borderColor: colors.border }]}
+                  >
+                    <Text style={[styles.presetBtnText, { color: colors.textMuted }]}>
+                      Production
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleResetBackendUrl}
+                    style={[styles.presetBtn, { borderColor: colors.border }]}
+                  >
+                    <RefreshCw size={11} color={colors.textMuted} style={{ marginRight: 4 }} />
+                    <Text style={[styles.presetBtnText, { color: colors.textMuted }]}>
+                      Reset
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Text style={[styles.serverNote, { color: colors.textMuted, marginTop: 4 }]}>
+                  Locked to hardened production server origin
+                </Text>
+              )}
             </View>
           )}
         </View>

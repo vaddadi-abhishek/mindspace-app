@@ -137,9 +137,9 @@ class ShareViewController: UIViewController, UNUserNotificationCenterDelegate {
             } else {
               urlString = ""
             }
-            if !urlString.isEmpty {
-              let pageTitle = content.attributedTitle?.string ?? self.extractHost(from: urlString)
-              self.handleSaveAndAnimate(type: .weburl, explicitUrl: urlString, explicitTitle: pageTitle)
+            if let validUrl = self.validateAndSanitizeUrl(urlString) {
+              let pageTitle = content.attributedTitle?.string ?? self.extractHost(from: validUrl)
+              self.handleSaveAndAnimate(type: .weburl, explicitUrl: validUrl, explicitTitle: pageTitle)
               return
             }
           }
@@ -159,8 +159,8 @@ class ShareViewController: UIViewController, UNUserNotificationCenterDelegate {
                let title = metaJson["title"] as? String, !title.isEmpty {
               extractedTitle = title
             }
-            if !baseURI.isEmpty {
-              self.handleSaveAndAnimate(type: .weburl, explicitUrl: baseURI, explicitTitle: extractedTitle.isEmpty ? self.extractHost(from: baseURI) : extractedTitle)
+            if let validUri = self.validateAndSanitizeUrl(baseURI) {
+              self.handleSaveAndAnimate(type: .weburl, explicitUrl: validUri, explicitTitle: extractedTitle.isEmpty ? self.extractHost(from: validUri) : extractedTitle)
               return
             }
           }
@@ -637,14 +637,41 @@ class ShareViewController: UIViewController, UNUserNotificationCenterDelegate {
     return "Saved Link"
   }
 
-  private func extractUrl(from text: String) -> String? {
-    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-    let matches = detector?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
-    if let firstMatch = matches?.first, let range = Range(firstMatch.range, in: text) {
-      return String(text[range])
+  private func validateAndSanitizeUrl(_ urlString: String) -> String? {
+    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return nil }
+
+    let lower = trimmed.lowercased()
+    if lower.hasPrefix("file:") || lower.hasPrefix("content:") || lower.hasPrefix("javascript:") || lower.hasPrefix("data:") || lower.hasPrefix("blob:") {
+      return nil
     }
-    if text.lowercased().hasPrefix("http://") || text.lowercased().hasPrefix("https://") {
-      return text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased() else {
+      return nil
+    }
+    guard (scheme == "http" || scheme == "https"), let host = url.host, !host.isEmpty else {
+      return nil
+    }
+    return trimmed
+  }
+
+  private func extractUrl(from text: String) -> String? {
+    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    let lower = trimmed.lowercased()
+    if lower.hasPrefix("file:") || lower.hasPrefix("content:") || lower.hasPrefix("javascript:") || lower.hasPrefix("data:") || lower.hasPrefix("blob:") {
+      return nil
+    }
+
+    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    let matches = detector?.matches(in: trimmed, options: [], range: NSRange(location: 0, length: trimmed.utf16.count))
+    if let firstMatch = matches?.first, let range = Range(firstMatch.range, in: trimmed) {
+      let candidate = String(trimmed[range])
+      if let validated = validateAndSanitizeUrl(candidate) {
+        return validated
+      }
+    }
+    if lower.hasPrefix("http://") || lower.hasPrefix("https://") {
+      return validateAndSanitizeUrl(trimmed)
     }
     return nil
   }

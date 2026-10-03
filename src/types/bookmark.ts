@@ -169,6 +169,7 @@ export interface Bookmark {
 export interface ArticleContent {
   bookmark_id: string;
   content_html: string;
+  content_markdown?: string | null;
   word_count: number;
   reading_time_minutes: number;
   created_at: string;

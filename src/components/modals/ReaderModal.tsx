@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Clock, FileText, Sun, Moon, Type } from 'lucide-react-native';
+import Markdown from 'react-native-markdown-display';
 import { fetchBookmarkArticle } from '../../services/api';
 import type { ArticleContent, Bookmark } from '../../types/bookmark';
 import { useTheme } from '../../context/ThemeContext';
@@ -96,15 +98,27 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
     xl: { title: 32, body: 21, lineHeight: 36 },
   }[fontSize];
 
-  // Helper to strip HTML tags for clean native text rendering
-  const cleanHtmlToText = (html?: string): string => {
+  // Helper to convert HTML tags into sanitized Markdown for native display
+  const htmlToMarkdown = (html?: string): string => {
     if (!html) return '';
     return html
+      .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '# $1\n\n')
+      .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '## $1\n\n')
+      .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '### $1\n\n')
+      .replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, '#### $1\n\n')
+      .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, '> $1\n\n')
+      .replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n')
+      .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, '`$1`')
+      .replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, '*$1*')
+      .replace(/<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+      .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '- $1\n')
+      .replace(/<\/ul>/gi, '\n')
+      .replace(/<\/ol>/gi, '\n')
+      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1\n\n')
       .replace(/<br\s*[\/]?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/h[1-6]>/gi, '\n\n')
-      .replace(/<li>/gi, '• ')
-      .replace(/<\/li>/gi, '\n')
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
@@ -114,6 +128,12 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
       .replace(/&gt;/g, '>')
       .trim();
   };
+
+  const contentToRender =
+    article?.content_markdown ||
+    htmlToMarkdown(article?.content_html) ||
+    bookmark.description ||
+    'No article content available.';
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -232,19 +252,78 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
             {/* Divider */}
             <View style={[styles.contentDivider, { backgroundColor: themeColors.border }]} />
 
-            {/* Body */}
-            <Text
-              style={[
-                styles.articleBody,
-                {
+            {/* Markdown Body */}
+            <Markdown
+              style={{
+                body: {
                   color: themeColors.text,
                   fontSize: fontSizeMap.body,
                   lineHeight: fontSizeMap.lineHeight,
+                  fontFamily: 'Georgia',
                 },
-              ]}
+                paragraph: {
+                  marginTop: 0,
+                  marginBottom: 16,
+                },
+                heading1: {
+                  color: themeColors.text,
+                  fontSize: fontSizeMap.title * 0.95,
+                  fontWeight: '700',
+                  marginTop: 18,
+                  marginBottom: 10,
+                },
+                heading2: {
+                  color: themeColors.text,
+                  fontSize: fontSizeMap.title * 0.85,
+                  fontWeight: '700',
+                  marginTop: 14,
+                  marginBottom: 8,
+                },
+                heading3: {
+                  color: themeColors.text,
+                  fontSize: fontSizeMap.title * 0.75,
+                  fontWeight: '600',
+                  marginTop: 12,
+                  marginBottom: 6,
+                },
+                link: {
+                  color: '#B5814C',
+                  textDecorationLine: 'underline',
+                },
+                blockquote: {
+                  backgroundColor: themeColors.card,
+                  borderColor: '#B5814C',
+                  borderLeftWidth: 3,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  marginVertical: 10,
+                },
+                code_inline: {
+                  backgroundColor: themeColors.card,
+                  borderColor: themeColors.border,
+                  borderWidth: 1,
+                  borderRadius: 4,
+                  paddingHorizontal: 4,
+                  fontFamily: 'Courier',
+                },
+                code_block: {
+                  backgroundColor: themeColors.card,
+                  borderColor: themeColors.border,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  padding: 10,
+                  fontFamily: 'Courier',
+                },
+              }}
+              onLinkPress={(url) => {
+                if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                  Linking.openURL(url).catch(() => {});
+                }
+                return false;
+              }}
             >
-              {cleanHtmlToText(article?.content_html) || bookmark.description || 'No article content available.'}
-            </Text>
+              {contentToRender}
+            </Markdown>
           </ScrollView>
         )}
       </SafeAreaView>

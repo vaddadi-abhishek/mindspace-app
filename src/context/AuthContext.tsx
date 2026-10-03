@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getCurrentUser,
   logoutUser,
@@ -8,8 +7,8 @@ import {
   signUpUser,
   isTokenExpired,
   attemptTokenRefresh,
-  AUTH_TOKEN_KEY,
-  AUTH_REFRESH_TOKEN_KEY,
+  getSecureAuthToken,
+  getSecureRefreshToken,
 } from '../services/api';
 import type { AuthUser, SignUpResponse } from '../types/bookmark';
 
@@ -60,8 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isLoggedIn) return;
 
     const checkAndRefreshSession = async () => {
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-      const refreshToken = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+      const token = await getSecureAuthToken();
+      const refreshToken = await getSecureRefreshToken();
       if (!refreshToken) return;
 
       if (isTokenExpired(token, 300)) {

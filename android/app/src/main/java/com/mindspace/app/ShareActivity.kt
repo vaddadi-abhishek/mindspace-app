@@ -137,15 +137,37 @@ class ShareActivity : Activity() {
     }
 
     private fun extractUrl(text: String): String {
-        val pattern = Pattern.compile("https?://[^\\s]+")
-        val matcher = pattern.matcher(text)
-        if (matcher.find()) {
-            return matcher.group()
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return ""
+
+        val lower = trimmed.lowercase(Locale.ROOT)
+        if (lower.startsWith("file:") || lower.startsWith("content:") || lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("blob:")) {
+            return ""
         }
-        if (text.startsWith("http://") || text.startsWith("https://")) {
-            return text
+
+        val pattern = Pattern.compile("https?://[^\\s]+", Pattern.CASE_INSENSITIVE)
+        val matcher = pattern.matcher(trimmed)
+        val candidate = if (matcher.find()) {
+            matcher.group()
+        } else if (trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true)) {
+            trimmed
+        } else {
+            return ""
         }
-        return ""
+
+        return try {
+            val uri = Uri.parse(candidate)
+            val scheme = uri.scheme?.lowercase(Locale.ROOT)
+            val host = uri.host
+            // Strictly enforce http or https protocol and non-empty host
+            if ((scheme == "http" || scheme == "https") && !host.isNullOrBlank()) {
+                candidate
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     private fun extractHost(urlStr: String): String {
