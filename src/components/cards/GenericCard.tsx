@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { MoreVertical, Sparkles, BookOpen, ExternalLink } from 'lucide-react-native';
+import { MoreVertical, Sparkles, BookOpen, ExternalLink, Clock } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, GlobalWebCardData } from '../../types/bookmark';
 import {
@@ -147,7 +147,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           </Text>
         )}
 
-        {/* Bottom AI Status / Categories / Tags */}
+        {/* Bottom AI Status / Categories / Tags / Reading Stats */}
         <View style={styles.bottomRow}>
           {hasAi && (
             <TouchableOpacity
@@ -188,7 +188,24 @@ export const GenericCard: React.FC<GenericCardProps> = ({
             </View>
           )}
 
-          {bookmark.is_article && !mediaUrl && (
+          {Boolean(cardData?.reading_time_minutes) && (
+            <View
+              style={[
+                styles.aiPill,
+                {
+                  backgroundColor: isDark ? 'rgba(40, 34, 28, 0.8)' : 'rgba(235, 229, 220, 0.8)',
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Clock size={10} color={colors.textMuted} />
+              <Text style={[styles.aiPillText, { color: colors.textBody }]}>
+                {cardData?.reading_time_minutes} min read
+              </Text>
+            </View>
+          )}
+
+          {bookmark.is_article && !mediaUrl && !cardData?.reading_time_minutes && (
             <View
               style={[
                 styles.aiPill,

@@ -6,8 +6,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Share,
 } from 'react-native';
-import { Heart, MessageCircle, MoreVertical, CheckCircle } from 'lucide-react-native';
+import {
+  Heart,
+  MessageCircle,
+  Repeat,
+  Send,
+  Bookmark as BookmarkIcon,
+  MoreVertical,
+  CheckCircle,
+} from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, InstagramCardData } from '../../types/bookmark';
 import {
@@ -15,6 +24,7 @@ import {
   parseCardData,
   formatNumber,
   formatRelativeDate,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface InstagramCardProps {
@@ -38,7 +48,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
     verified: false,
   };
 
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
   const media = cardData?.media || [];
   const imageUrl =
     media[0]?.url ||
@@ -53,6 +63,19 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: bookmark.title ? `${bookmark.title}\n${bookmark.url}` : bookmark.url,
+        url: bookmark.url,
+      });
+    } catch {}
+  };
+
+  const likesCount = formatNumber(metrics.likes);
+  const commentsCount = formatNumber(metrics.comments);
+  const repostsCount = formatNumber(metrics.reposts);
 
   return (
     <TouchableOpacity
@@ -120,21 +143,47 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
 
       {/* Content & Metrics */}
       <View style={styles.body}>
-        {/* Engagement Icons */}
+        {/* Engagement Action Bar */}
         <View style={styles.engagementRow}>
-          <View style={styles.metricGroup}>
-            <Heart size={16} color={colors.textBody} />
-            <Text style={[styles.metricText, { color: colors.textHeading }]}>
-              {formatNumber(metrics.likes) || 'Like'}
-            </Text>
+          <View style={styles.leftActions}>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
+              <Heart size={20} color={colors.textHeading} />
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionWithCount}>
+              <MessageCircle size={20} color={colors.textHeading} />
+              {Boolean(commentsCount) && (
+                <Text style={[styles.actionCountText, { color: colors.textHeading }]}>
+                  {commentsCount}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {Boolean(repostsCount) && (
+              <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionWithCount}>
+                <Repeat size={19} color={colors.textHeading} />
+                <Text style={[styles.actionCountText, { color: colors.textHeading }]}>
+                  {repostsCount}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity activeOpacity={0.7} onPress={handleShare} style={styles.actionBtn}>
+              <Send size={19} color={colors.textHeading} />
+            </TouchableOpacity>
           </View>
-          <View style={styles.metricGroup}>
-            <MessageCircle size={16} color={colors.textBody} />
-            <Text style={[styles.metricText, { color: colors.textHeading }]}>
-              {formatNumber(metrics.comments) || 'Comment'}
-            </Text>
-          </View>
+
+          <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
+            <BookmarkIcon size={20} color={colors.textHeading} />
+          </TouchableOpacity>
         </View>
+
+        {/* Likes Count Row */}
+        {Boolean(likesCount) && (
+          <Text style={[styles.likesText, { color: colors.textHeading }]}>
+            {likesCount} likes
+          </Text>
+        )}
 
         {/* Caption */}
         {Boolean(bookmark.description || bookmark.title) && (
@@ -142,6 +191,15 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
             <Text style={styles.captionUsername}>{author.username} </Text>
             {bookmark.description || bookmark.title}
           </Text>
+        )}
+
+        {/* View all comments link */}
+        {Boolean(commentsCount) && (
+          <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost}>
+            <Text style={[styles.commentsLink, { color: colors.textMuted }]}>
+              View all {commentsCount} comments
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     </TouchableOpacity>
@@ -221,17 +279,31 @@ const styles = StyleSheet.create({
   engagementRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    paddingVertical: 2,
   },
-  metricGroup: {
+  leftActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionBtn: {
+    padding: 2,
+  },
+  actionWithCount: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    padding: 2,
   },
-  metricText: {
+  actionCountText: {
     fontSize: 12.5,
     fontWeight: '600',
+  },
+  likesText: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 2,
   },
   caption: {
     fontSize: 13.5,
@@ -240,4 +312,9 @@ const styles = StyleSheet.create({
   captionUsername: {
     fontWeight: '700',
   },
+  commentsLink: {
+    fontSize: 12,
+    marginTop: 2,
+  },
 });
+

@@ -112,6 +112,8 @@ export interface GlobalWebCardData {
   site_name: string | null;
   type: string | null;
   snapshot?: string | null;
+  reading_time_minutes?: number | null;
+  word_count?: number | null;
 }
 
 export interface PinterestCardData {

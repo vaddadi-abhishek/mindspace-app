@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Share,
 } from 'react-native';
-import { Play, MoreVertical } from 'lucide-react-native';
+import { Play, MoreVertical, ThumbsUp, ThumbsDown, Share2, CheckCircle } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, YouTubeCardData } from '../../types/bookmark';
 import {
@@ -15,6 +16,7 @@ import {
   parseCardData,
   formatNumber,
   formatRelativeDate,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface YouTubeCardProps {
@@ -28,7 +30,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
   onOpenMenu,
   onViewAiContext,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const cardData = parseCardData<YouTubeCardData>(bookmark.card_data);
 
   const channel = cardData?.channel || {
@@ -36,7 +38,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
     avatar_url: bookmark.logo,
   };
 
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
   const thumbnail =
     cardData?.video_thumbnail ||
     bookmark.snapshot_url ||
@@ -48,6 +50,18 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: bookmark.title ? `${bookmark.title}\n${bookmark.url}` : bookmark.url,
+        url: bookmark.url,
+      });
+    } catch {}
+  };
+
+  const likesCount = formatNumber(metrics.likes);
+  const viewsCount = formatNumber(metrics.views);
 
   return (
     <TouchableOpacity
@@ -96,10 +110,28 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
             <Text style={[styles.title, { color: colors.textHeading }]} numberOfLines={2}>
               {bookmark.title || bookmark.url}
             </Text>
-            <Text style={[styles.channelMeta, { color: colors.textMuted }]}>
-              {channel.name} · {formatNumber(metrics.views) ? `${formatNumber(metrics.views)} views · ` : ''}
-              {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
-            </Text>
+            <View style={styles.channelMetaRow}>
+              <Text style={[styles.channelName, { color: colors.textBody }]} numberOfLines={1}>
+                {channel.name}
+              </Text>
+              <CheckCircle size={11} color={colors.textMuted} style={styles.verifiedIcon} />
+              {Boolean(viewsCount) && (
+                <>
+                  <Text style={[styles.metaDot, { color: colors.textMuted }]}>·</Text>
+                  <Text style={[styles.viewsText, { color: colors.textMuted }]}>
+                    {viewsCount} views
+                  </Text>
+                </>
+              )}
+              {Boolean(formatRelativeDate(cardData?.posted_at || bookmark.created_at)) && (
+                <>
+                  <Text style={[styles.metaDot, { color: colors.textMuted }]}>·</Text>
+                  <Text style={[styles.dateText, { color: colors.textMuted }]}>
+                    {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
+                  </Text>
+                </>
+              )}
+            </View>
           </View>
 
           <TouchableOpacity
@@ -111,6 +143,48 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <MoreVertical size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Video Description Snippet if present */}
+        {Boolean(bookmark.description && bookmark.description !== bookmark.title) && (
+          <Text style={[styles.description, { color: colors.textMuted }]} numberOfLines={2}>
+            {bookmark.description}
+          </Text>
+        )}
+
+        {/* Action Pills Row */}
+        <View style={[styles.actionsRow, { borderTopColor: colors.borderLight }]}>
+          {/* Like & Dislike Joint Pill */}
+          <View style={[styles.jointPill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleOpenVideo}
+              style={styles.likeSubPill}
+            >
+              <ThumbsUp size={13} color={colors.textHeading} />
+              <Text style={[styles.pillText, { color: colors.textHeading }]}>
+                {likesCount || 'Like'}
+              </Text>
+            </TouchableOpacity>
+            <View style={[styles.pillDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' }]} />
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleOpenVideo}
+              style={styles.dislikeSubPill}
+            >
+              <ThumbsDown size={13} color={colors.textHeading} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Share Pill */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleShare}
+            style={[styles.singlePill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}
+          >
+            <Share2 size={13} color={colors.textHeading} />
+            <Text style={[styles.pillText, { color: colors.textHeading }]}>Share</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -159,6 +233,7 @@ const styles = StyleSheet.create({
   },
   body: {
     padding: 12,
+    gap: 8,
   },
   channelRow: {
     flexDirection: 'row',
@@ -193,10 +268,80 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginBottom: 4,
   },
-  channelMeta: {
-    fontSize: 11.5,
+  channelMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  channelName: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  verifiedIcon: {
+    marginLeft: 1,
+  },
+  metaDot: {
+    fontSize: 11,
+  },
+  viewsText: {
+    fontSize: 11,
+  },
+  dateText: {
+    fontSize: 11,
   },
   menuBtn: {
     padding: 2,
   },
+  description: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 2,
+  },
+  jointPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  likeSubPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  dislikeSubPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillDivider: {
+    width: 1,
+    height: 14,
+  },
+  singlePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  pillText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
 });
+

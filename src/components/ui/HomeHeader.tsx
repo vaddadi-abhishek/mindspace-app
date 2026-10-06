@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { Plus, Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
+import { MindspaceLogo } from './MindspaceLogo';
 import type { UserPlanInfo } from '../../types/bookmark';
 
 interface HomeHeaderProps {
@@ -21,14 +22,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ onOpenAddModal, planInfo
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Top Left: Mindspace Logo & Title with Credits Indicator */}
       <View style={styles.brandRow}>
-        <LinearGradient
-          colors={isDark ? ['#C88E3E', '#996533'] : ['#B5814C', '#996533']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.logoBadge}
-        >
-          <Text style={styles.logoLetter}>M</Text>
-        </LinearGradient>
+        <View style={styles.logoBadge}>
+          <MindspaceLogo size={24} color="#000000" />
+        </View>
 
         <View style={styles.brandTextCol}>
           <Text
@@ -123,18 +119,17 @@ const styles = StyleSheet.create({
   logoBadge: {
     width: 36,
     height: 36,
-    borderRadius: 11,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8E3DA',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  logoLetter: {
-    color: '#FAF8F5',
-    fontWeight: '800',
-    fontSize: 18,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   brandTextCol: {
     justifyContent: 'center',

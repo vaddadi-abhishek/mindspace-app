@@ -7,13 +7,14 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import { Bookmark as SaveIcon, MoreVertical } from 'lucide-react-native';
+import { Bookmark as SaveIcon, MessageCircle, MoreVertical } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, PinterestCardData } from '../../types/bookmark';
 import {
   sanitizeUrl,
   parseCardData,
   formatNumber,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface PinterestCardProps {
@@ -32,12 +33,15 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
 
   const media = cardData?.media || [];
   const imageUrl = media[0]?.url || cardData?.video_thumbnail || bookmark.snapshot_url;
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
 
   const handleOpenPin = () => {
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const savesCount = formatNumber(metrics.saves);
+  const commentsCount = formatNumber(metrics.comments);
 
   return (
     <TouchableOpacity
@@ -78,19 +82,30 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             {bookmark.logo ? (
               <Image source={{ uri: bookmark.logo }} style={styles.logo} />
             ) : null}
-            <Text style={[styles.sourceText, { color: colors.textMuted }]} numberOfLines={1}>
-              {bookmark.site_name || 'Pinterest'}
+            <Text style={[styles.sourceText, { color: colors.textMuted }]}>
+              {cardData?.author?.name || bookmark.site_name || 'Pinterest'}
             </Text>
           </View>
 
-          {Boolean(metrics.saves) && (
-            <View style={styles.savesRow}>
-              <SaveIcon size={12} color="#E60023" />
-              <Text style={[styles.savesText, { color: colors.textHeading }]}>
-                {formatNumber(metrics.saves)}
-              </Text>
-            </View>
-          )}
+          <View style={styles.metricsGroup}>
+            {Boolean(commentsCount) && (
+              <View style={styles.metricItem}>
+                <MessageCircle size={12} color={colors.textMuted} />
+                <Text style={[styles.metricText, { color: colors.textMuted }]}>
+                  {commentsCount}
+                </Text>
+              </View>
+            )}
+
+            {Boolean(savesCount) && (
+              <View style={styles.savesRow}>
+                <SaveIcon size={12} color="#E60023" />
+                <Text style={[styles.savesText, { color: colors.textHeading }]}>
+                  {savesCount}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -156,6 +171,20 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '500',
   },
+  metricsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  metricItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metricText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
   savesRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,3 +195,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

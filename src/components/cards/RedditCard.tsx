@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Share,
 } from 'react-native';
-import { ArrowBigUp, MessageSquare, MoreVertical } from 'lucide-react-native';
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, MoreVertical } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, RedditCardData } from '../../types/bookmark';
 import {
@@ -15,6 +16,7 @@ import {
   parseCardData,
   formatNumber,
   formatRelativeDate,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface RedditCardProps {
@@ -28,7 +30,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
   onOpenMenu,
   onViewAiContext,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const cardData = parseCardData<RedditCardData>(bookmark.card_data);
 
   const subreddit = cardData?.subreddit || {
@@ -36,7 +38,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
     icon_url: bookmark.logo,
   };
 
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
   const media = cardData?.media || [];
   const imageUrl = media[0]?.url || cardData?.video_thumbnail || bookmark.snapshot_url;
 
@@ -44,6 +46,18 @@ export const RedditCard: React.FC<RedditCardProps> = ({
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: bookmark.title ? `${bookmark.title}\n${bookmark.url}` : bookmark.url,
+        url: bookmark.url,
+      });
+    } catch {}
+  };
+
+  const upvotesCount = formatNumber(metrics.upvotes);
+  const commentsCount = formatNumber(metrics.comments);
 
   return (
     <TouchableOpacity
@@ -110,21 +124,44 @@ export const RedditCard: React.FC<RedditCardProps> = ({
         </View>
       )}
 
-      {/* Metrics Row */}
+      {/* Metrics Row - Reddit Pill Container & Share */}
       <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
-        <View style={styles.metricItem}>
-          <ArrowBigUp size={18} color="#FF4500" />
-          <Text style={[styles.metricText, { color: colors.textHeading }]}>
-            {formatNumber(metrics.upvotes) || 'Vote'}
-          </Text>
+        <View style={styles.leftPills}>
+          {/* Vote Container */}
+          <View style={[styles.pillContainer, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.voteArrowBtn}>
+              <ArrowBigUp size={16} color="#FF4500" />
+            </TouchableOpacity>
+            <Text style={[styles.voteCountText, { color: colors.textHeading }]}>
+              {upvotesCount || 'Vote'}
+            </Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.voteArrowBtn}>
+              <ArrowBigDown size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Comment Pill */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleOpenPost}
+            style={[styles.singlePill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}
+          >
+            <MessageSquare size={13} color={colors.textMuted} />
+            <Text style={[styles.pillText, { color: colors.textHeading }]}>
+              {commentsCount || 0}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.metricItem}>
-          <MessageSquare size={14} color={colors.textMuted} />
-          <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.comments) || 0} comments
-          </Text>
-        </View>
+        {/* Share Pill */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={handleShare}
+          style={[styles.singlePill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}
+        >
+          <Share2 size={13} color={colors.textMuted} />
+          <Text style={[styles.pillText, { color: colors.textHeading }]}>Share</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -207,17 +244,45 @@ const styles = StyleSheet.create({
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'space-between',
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  metricItem: {
+  leftPills: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
-  metricText: {
+  pillContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  voteArrowBtn: {
+    padding: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voteCountText: {
     fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 4,
+  },
+  singlePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  pillText: {
+    fontSize: 11.5,
     fontWeight: '600',
   },
 });
+

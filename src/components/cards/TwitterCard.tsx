@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Share,
 } from 'react-native';
 import {
   Heart,
@@ -13,6 +14,7 @@ import {
   Repeat,
   Eye,
   Bookmark as BookmarkIcon,
+  Share2,
   MoreVertical,
   CheckCircle,
 } from 'lucide-react-native';
@@ -23,6 +25,8 @@ import {
   parseCardData,
   formatNumber,
   formatRelativeDate,
+  formatDetailDate,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface TwitterCardProps {
@@ -46,14 +50,26 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
     verified: false,
   };
 
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
   const media = cardData?.media || [];
+  const postedAt = cardData?.posted_at || bookmark.created_at;
   const [avatarError, setAvatarError] = useState(false);
 
   const handleOpenTweet = () => {
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: bookmark.title ? `${bookmark.title}\n${bookmark.url}` : bookmark.url,
+        url: bookmark.url,
+      });
+    } catch {}
+  };
+
+  const viewsCount = formatNumber(metrics.views);
 
   return (
     <TouchableOpacity
@@ -98,21 +114,24 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
               )}
             </View>
             <Text style={[styles.handleText, { color: colors.textMuted }]} numberOfLines={1}>
-              @{author.handle} · {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
+              {(author.handle.startsWith('@') ? author.handle : `@${author.handle}`)} · {formatRelativeDate(postedAt)}
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onOpenMenu(bookmark);
-          }}
-          style={styles.menuBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <MoreVertical size={16} color={colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <Text style={[styles.xBrand, { color: colors.textHeading }]}>𝕏</Text>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.menuBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tweet Text */}
@@ -131,7 +150,26 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
         </View>
       )}
 
-      {/* Metrics Row */}
+      {/* Date & Views Row */}
+      {Boolean(formatDetailDate(postedAt) || viewsCount) && (
+        <View style={styles.dateViewsRow}>
+          {formatDetailDate(postedAt) && (
+            <Text style={[styles.dateViewsText, { color: colors.textMuted }]}>
+              {formatDetailDate(postedAt)}
+            </Text>
+          )}
+          {Boolean(formatDetailDate(postedAt) && viewsCount) && (
+            <Text style={[styles.dotSep, { color: colors.textMuted }]}>·</Text>
+          )}
+          {Boolean(viewsCount) && (
+            <Text style={[styles.viewsHighlight, { color: colors.textHeading }]}>
+              {viewsCount} <Text style={{ fontWeight: '400', color: colors.textMuted }}>Views</Text>
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Metrics Action Row */}
       <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
         <View style={styles.metricItem}>
           <MessageCircle size={14} color={colors.textMuted} />
@@ -154,14 +192,21 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
           </Text>
         </View>
 
-        {Boolean(metrics.views) && (
-          <View style={styles.metricItem}>
-            <Eye size={14} color={colors.textMuted} />
-            <Text style={[styles.metricText, { color: colors.textMuted }]}>
-              {formatNumber(metrics.views)}
-            </Text>
-          </View>
-        )}
+        <View style={styles.metricItem}>
+          <BookmarkIcon size={14} color={colors.textMuted} />
+          <Text style={[styles.metricText, { color: colors.textMuted }]}>
+            {formatNumber(metrics.bookmarks) || 0}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={handleShare}
+          style={styles.metricItem}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Share2 size={14} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -223,6 +268,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  xBrand: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
   menuBtn: {
     padding: 2,
   },
@@ -235,12 +289,29 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: 10,
     backgroundColor: '#EBE5DC',
   },
   mediaImage: {
     width: '100%',
     height: '100%',
+  },
+  dateViewsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  dateViewsText: {
+    fontSize: 11.5,
+  },
+  dotSep: {
+    fontSize: 11.5,
+  },
+  viewsHighlight: {
+    fontSize: 11.5,
+    fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',
@@ -253,9 +324,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    paddingVertical: 2,
   },
   metricText: {
     fontSize: 12,
     fontWeight: '500',
   },
 });
+

@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Share,
 } from 'react-native';
-import { ThumbsUp, MessageSquare, Share2, MoreVertical, FileText } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, Repeat, Share2, MoreVertical, FileText } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, LinkedInCardData } from '../../types/bookmark';
 import {
@@ -15,6 +16,7 @@ import {
   parseCardData,
   formatNumber,
   formatRelativeDate,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface LinkedInCardProps {
@@ -36,7 +38,7 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
     avatar_url: bookmark.logo,
   };
 
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
   const media = cardData?.media || [];
   const [avatarError, setAvatarError] = useState(false);
 
@@ -44,6 +46,20 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: bookmark.title ? `${bookmark.title}\n${bookmark.url}` : bookmark.url,
+        url: bookmark.url,
+      });
+    } catch {}
+  };
+
+  const reactionsCount = formatNumber(metrics.reactions);
+  const commentsCount = formatNumber(metrics.comments);
+  const repostsCount = formatNumber(metrics.reposts);
+  const hasMetrics = Boolean(reactionsCount || commentsCount || repostsCount);
 
   return (
     <TouchableOpacity
@@ -135,28 +151,61 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
         </View>
       )}
 
-      {/* Metrics Row */}
-      <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
-        <View style={styles.metricItem}>
-          <ThumbsUp size={14} color="#0A66C2" />
-          <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.reactions) || 0}
-          </Text>
-        </View>
+      {/* Metrics Summary Row (if metrics exist) */}
+      {hasMetrics && (
+        <View style={styles.metricsSummaryRow}>
+          <View style={styles.reactionsBadgeRow}>
+            {Boolean(reactionsCount) && (
+              <>
+                <View style={styles.reactionCircle}>
+                  <ThumbsUp size={10} color="#FFFFFF" />
+                </View>
+                <Text style={[styles.reactionCountText, { color: colors.textMuted }]}>
+                  {reactionsCount}
+                </Text>
+              </>
+            )}
+          </View>
 
-        <View style={styles.metricItem}>
-          <MessageSquare size={14} color={colors.textMuted} />
-          <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.comments) || 0}
-          </Text>
+          <View style={styles.commentsRepostsRow}>
+            {Boolean(commentsCount) && (
+              <Text style={[styles.metricDetailText, { color: colors.textMuted }]}>
+                {commentsCount} comments
+              </Text>
+            )}
+            {Boolean(commentsCount && repostsCount) && (
+              <Text style={[styles.metricDetailText, { color: colors.textMuted }]}>·</Text>
+            )}
+            {Boolean(repostsCount) && (
+              <Text style={[styles.metricDetailText, { color: colors.textMuted }]}>
+                {repostsCount} reposts
+              </Text>
+            )}
+          </View>
         </View>
+      )}
 
-        <View style={styles.metricItem}>
-          <Share2 size={14} color={colors.textMuted} />
-          <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.reposts) || 0}
-          </Text>
-        </View>
+      {/* Action Buttons Row */}
+      <View style={[styles.actionsRow, { borderTopColor: colors.borderLight }]}>
+        <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
+          <ThumbsUp size={15} color={colors.textMuted} />
+          <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Like</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
+          <MessageSquare size={15} color={colors.textMuted} />
+          <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Comment</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
+          <Repeat size={15} color={colors.textMuted} />
+          <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Repost</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.7} onPress={handleShare} style={styles.actionBtn}>
+          <Share2 size={15} color={colors.textMuted} />
+          <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Send</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -257,20 +306,55 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  metricsRow: {
+  metricsSummaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 10,
+    paddingVertical: 4,
+    marginBottom: 4,
+  },
+  reactionsBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reactionCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#0A66C2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionCountText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  commentsRepostsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metricDetailText: {
+    fontSize: 11.5,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  metricItem: {
+  actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
   },
-  metricText: {
-    fontSize: 12,
-    fontWeight: '500',
+  actionLabel: {
+    fontSize: 11.5,
+    fontWeight: '600',
   },
 });
+

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Share,
 } from 'react-native';
 import { ThumbsUp, MessageSquare, Share2, MoreVertical } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -15,6 +16,7 @@ import {
   parseCardData,
   formatNumber,
   formatRelativeDate,
+  extractMetrics,
 } from '../../utils/helpers';
 
 interface FacebookCardProps {
@@ -36,7 +38,7 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
     avatar_url: bookmark.logo,
   };
 
-  const metrics = cardData?.metrics || {};
+  const metrics = extractMetrics(cardData, bookmark);
   const media = cardData?.media || [];
   const imageUrl = media[0]?.url || cardData?.video_thumbnail || bookmark.snapshot_url;
   const [avatarError, setAvatarError] = useState(false);
@@ -45,6 +47,19 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
     const clean = sanitizeUrl(bookmark.url);
     if (clean) Linking.openURL(clean).catch(() => {});
   };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: bookmark.title ? `${bookmark.title}\n${bookmark.url}` : bookmark.url,
+        url: bookmark.url,
+      });
+    } catch {}
+  };
+
+  const likesCount = formatNumber(metrics.likes);
+  const commentsCount = formatNumber(metrics.comments);
+  const sharesCount = formatNumber(metrics.shares);
 
   return (
     <TouchableOpacity
@@ -107,27 +122,28 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
         </View>
       )}
 
+      {/* Metrics & Actions Row */}
       <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
-        <View style={styles.metricItem}>
-          <ThumbsUp size={14} color="#1877F2" />
-          <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.likes) || 0}
+        <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.metricItem}>
+          <ThumbsUp size={15} color="#1877F2" />
+          <Text style={[styles.metricText, { color: colors.textHeading }]}>
+            {likesCount || 'Like'}
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.metricItem}>
-          <MessageSquare size={14} color={colors.textMuted} />
+        <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.metricItem}>
+          <MessageSquare size={15} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.comments) || 0}
+            {commentsCount ? `${commentsCount} comments` : 'Comment'}
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.metricItem}>
-          <Share2 size={14} color={colors.textMuted} />
+        <TouchableOpacity activeOpacity={0.7} onPress={handleShare} style={styles.metricItem}>
+          <Share2 size={15} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
-            {formatNumber(metrics.shares) || 0}
+            {sharesCount ? `${sharesCount} shares` : 'Share'}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -210,10 +226,13 @@ const styles = StyleSheet.create({
   metricItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
   },
   metricText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
+

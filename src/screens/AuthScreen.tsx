@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Sparkles, KeyRound } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { MindspaceLogo } from '../components/ui/MindspaceLogo';
 import {
   forgotPassword,
   verifyOtpUser,
@@ -159,16 +161,8 @@ export const AuthScreen: React.FC = () => {
         >
           {/* Logo & Header */}
           <View style={styles.brandContainer}>
-            <View
-              style={[
-                styles.logoBadge,
-                {
-                  backgroundColor: colors.primary,
-                  shadowColor: colors.primary,
-                },
-              ]}
-            >
-              <Text style={styles.logoText}>M</Text>
+            <View style={styles.logoBadge}>
+              <MindspaceLogo size={32} color="#000000" />
             </View>
             <Text style={[styles.brandTitle, { color: colors.textHeading }]}>
               mindspace
@@ -470,21 +464,20 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   logoBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8E3DA',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     marginBottom: 12,
-  },
-  logoText: {
-    color: '#FAF8F5',
-    fontWeight: '800',
-    fontSize: 24,
   },
   brandTitle: {
     fontSize: 26,
