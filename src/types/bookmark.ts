@@ -88,7 +88,7 @@ export interface RedditCardData {
     comments?: number;
   };
   posted_at: string | null;
-  media: MediaItem[];
+  media: MediaItem[] | null;
   video_thumbnail?: string | null;
 }
 
