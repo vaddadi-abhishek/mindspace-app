@@ -34,7 +34,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
   onOpenMenu,
   onViewAiContext,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const cardData = parseCardData<PinterestCardData>(bookmark.card_data);
 
   const mediaDetails = useMemo(() => {
@@ -64,11 +64,11 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
       ]}
     >
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={220}
+            height={350}
             onFallbackOpen={handleOpenPin}
           />
           <TouchableOpacity
@@ -86,7 +86,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
         <View style={styles.imageContainer}>
           <SlidableMedia
             images={mediaDetails.imageUrls}
-            height={240}
+            height={350}
             onFallbackOpen={handleOpenPin}
             dotActiveColor="#E60023"
           />
@@ -102,11 +102,11 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
           </TouchableOpacity>
         </View>
       ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={mediaDetails.imageUrls[0] || mediaDetails.posterUrl}
             style={styles.pinImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           <TouchableOpacity
             onPress={(e) => {
@@ -174,9 +174,11 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 220,
-    backgroundColor: '#EBE5DC',
+    height: 350,
     position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pinImage: {
     width: '100%',

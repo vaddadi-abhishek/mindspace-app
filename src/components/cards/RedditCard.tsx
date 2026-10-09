@@ -132,11 +132,11 @@ export const RedditCard: React.FC<RedditCardProps> = ({
 
       {/* Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
-        <View style={styles.mediaWrap}>
+        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={220}
+            height={350}
             onFallbackOpen={handleOpenPost}
           />
         </View>
@@ -144,17 +144,17 @@ export const RedditCard: React.FC<RedditCardProps> = ({
         <View style={styles.carouselWrap}>
           <SlidableMedia
             images={mediaDetails.imageUrls}
-            height={220}
+            height={350}
             onFallbackOpen={handleOpenPost}
             dotActiveColor="#FF4500"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={styles.mediaWrap}>
+        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
       ) : null}
@@ -274,12 +274,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mediaWrap: {
-    height: 220,
-    borderRadius: 12,
+    height: 350,
+    borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 10,
-    backgroundColor: '#EBE5DC',
     position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   carouselWrap: {
     width: '100%',

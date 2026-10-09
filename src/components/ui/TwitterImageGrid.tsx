@@ -21,7 +21,7 @@ export interface TwitterImageGridProps {
 export const TwitterImageGrid: React.FC<TwitterImageGridProps> = ({
   images,
   style,
-  height = 220,
+  height = 350,
   onPressImage,
   onPressCard,
 }) => {
@@ -40,7 +40,7 @@ export const TwitterImageGrid: React.FC<TwitterImageGridProps> = ({
   };
 
   const containerBorderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
-  const dividerColor = isDark ? '#1C1917' : '#E8E3DA';
+  const dividerColor = isDark ? '#000000' : '#F1EFEA';
 
   // 1 IMAGE: Full Width Card
   if (images.length === 1) {
@@ -49,9 +49,11 @@ export const TwitterImageGrid: React.FC<TwitterImageGridProps> = ({
         style={[
           styles.container,
           {
-            height: height || 220,
+            height: height || 350,
             borderColor: containerBorderColor,
-            backgroundColor: isDark ? '#141210' : '#F5F2EB',
+            backgroundColor: isDark ? '#000000' : '#F1EFEA',
+            justifyContent: 'center',
+            alignItems: 'center',
           },
           style,
         ]}
@@ -59,12 +61,12 @@ export const TwitterImageGrid: React.FC<TwitterImageGridProps> = ({
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => handlePress(0)}
-          style={styles.flex1}
+          style={[styles.flex1, { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }]}
         >
           <SafeImage
             url={images[0]}
             style={styles.fillImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </TouchableOpacity>
       </View>

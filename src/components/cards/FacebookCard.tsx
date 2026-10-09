@@ -330,11 +330,11 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
 
       {/* Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
-        <View style={styles.mediaWrap}>
+        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={200}
+            height={350}
             onFallbackOpen={handleOpenPost}
           />
         </View>
@@ -342,17 +342,17 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
         <View style={styles.carouselWrap}>
           <SlidableMedia
             images={mediaDetails.imageUrls}
-            height={210}
+            height={350}
             onFallbackOpen={handleOpenPost}
             dotActiveColor="#1877F2"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={styles.mediaWrap}>
+        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
       ) : null}
@@ -451,11 +451,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   mediaWrap: {
-    height: 200,
-    borderRadius: 12,
+    height: 350,
+    borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 10,
-    backgroundColor: '#EBE5DC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   carouselWrap: {
     width: '100%',

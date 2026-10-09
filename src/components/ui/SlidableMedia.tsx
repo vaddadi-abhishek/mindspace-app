@@ -33,6 +33,7 @@ export interface SlidableMediaProps {
   onPressItem?: (index: number) => void;
   onFallbackOpen?: () => void;
   dotActiveColor?: string;
+  resizeMode?: 'cover' | 'contain';
 }
 
 export const SlidableMedia: React.FC<SlidableMediaProps> = ({
@@ -40,16 +41,19 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
   images,
   videoUrl,
   posterUrl,
-  height = 240,
+  height = 350,
   style,
   onPressItem,
   onFallbackOpen,
   dotActiveColor,
+  resizeMode = 'contain',
 }) => {
   const { colors, isDark } = useTheme();
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const scrollRef = useRef<ScrollView>(null);
+
+  const containerBg = isDark ? '#000000' : '#F1EFEA';
 
   // Normalize media items into an array of { type, url, posterUrl }
   const mediaList: MediaSlideItem[] = React.useMemo(() => {
@@ -137,7 +141,7 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
   if (mediaList.length === 1) {
     const item = mediaList[0];
     return (
-      <View style={[styles.container, { height }, style]}>
+      <View style={[styles.container, { height, backgroundColor: containerBg }, style]}>
         {item.type === 'video' ? (
           <SafeVideo
             videoUrl={item.url}
@@ -149,12 +153,12 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
           <TouchableOpacity
             activeOpacity={0.92}
             onPress={() => handlePress(0)}
-            style={styles.singleImageTouch}
+            style={[styles.singleImageTouch, { backgroundColor: containerBg }]}
           >
             <SafeImage
               url={item.url}
-              style={styles.fillImage}
-              resizeMode="cover"
+              style={styles.containImage}
+              resizeMode={resizeMode}
             />
           </TouchableOpacity>
         )}
@@ -168,7 +172,7 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
       <View
         style={[
           styles.container,
-          { height, backgroundColor: isDark ? '#141210' : '#EBE5DC' },
+          { height, backgroundColor: containerBg },
         ]}
         onLayout={handleLayout}
       >
@@ -187,7 +191,7 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
               key={`${item.url}-${idx}`}
               style={[
                 styles.slide,
-                { width: containerWidth || '100%', height },
+                { width: containerWidth || '100%', height, backgroundColor: containerBg },
               ]}
             >
               {item.type === 'video' ? (
@@ -201,12 +205,12 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
                 <TouchableOpacity
                   activeOpacity={0.92}
                   onPress={() => handlePress(idx)}
-                  style={styles.singleImageTouch}
+                  style={[styles.singleImageTouch, { backgroundColor: containerBg }]}
                 >
                   <SafeImage
                     url={item.url}
-                    style={styles.fillImage}
-                    resizeMode="cover"
+                    style={styles.containImage}
+                    resizeMode={resizeMode}
                   />
                 </TouchableOpacity>
               )}
@@ -280,6 +284,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   singleImageTouch: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  containImage: {
     width: '100%',
     height: '100%',
   },

@@ -62,7 +62,7 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
   posterUrl,
   style,
   imageStyle,
-  height = 220,
+  height = 350,
   onFallbackOpen,
 }) => {
   const { isDark } = useTheme();
@@ -81,7 +81,8 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
     setIsPlaying(false);
   };
 
-  const containerHeight = height || 220;
+  const containerHeight = height || 350;
+  const containerBg = isDark ? '#000000' : '#F1EFEA';
 
   if (isPlaying && videoUrl) {
     return (
@@ -101,7 +102,7 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
         styles.facadeContainer,
         {
           height: containerHeight,
-          backgroundColor: isDark ? '#141210' : '#EBE5DC',
+          backgroundColor: containerBg,
         },
         style,
       ]}
@@ -110,7 +111,7 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
         <SafeImage
           url={posterUrl}
           style={[styles.posterImage, imageStyle as any]}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       ) : (
         <View style={styles.posterFallback} />
@@ -132,7 +133,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   posterImage: {
-    ...StyleSheet.absoluteFill,
     width: '100%',
     height: '100%',
   },

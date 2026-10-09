@@ -313,11 +313,11 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
 
       {/* Main Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
-        <View style={styles.mediaContainer}>
+        <View style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={280}
+            height={360}
             onFallbackOpen={handleOpenPost}
           />
         </View>
@@ -325,17 +325,17 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
         <View style={styles.carouselContainer}>
           <SlidableMedia
             images={mediaDetails.imageUrls}
-            height={280}
+            height={360}
             onFallbackOpen={handleOpenPost}
             dotActiveColor="#0095F6"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={styles.mediaContainer}>
+        <View style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
       ) : null}
@@ -491,10 +491,11 @@ const styles = StyleSheet.create({
   },
   mediaContainer: {
     width: '100%',
-    height: 280,
-    backgroundColor: '#000000',
+    height: 360,
     position: 'relative',
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   carouselContainer: {
     width: '100%',

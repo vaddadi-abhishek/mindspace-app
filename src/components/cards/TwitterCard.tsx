@@ -326,11 +326,11 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
 
       {/* Media: Video or Images Grid */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
-        <View style={styles.mediaWrap}>
+        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={220}
+            height={350}
             onFallbackOpen={handleOpenTweet}
           />
         </View>
@@ -338,16 +338,16 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
         <View style={styles.gridWrap}>
           <TwitterImageGrid
             images={mediaDetails.imageUrls}
-            height={mediaDetails.imageUrls.length === 1 ? 230 : 210}
+            height={mediaDetails.imageUrls.length === 1 ? 350 : 260}
             onPressCard={handleOpenTweet}
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={styles.mediaWrap}>
+        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
       ) : null}
@@ -502,12 +502,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   mediaWrap: {
-    height: 180,
+    height: 350,
     borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 10,
-    backgroundColor: '#EBE5DC',
     position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gridWrap: {
     width: '100%',

@@ -101,12 +101,12 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
     >
       {/* Video Thumbnail with Play Button */}
       {thumbSrc && (
-        <View style={styles.thumbnailContainer}>
+        <View style={[styles.thumbnailContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={thumbSrc}
             style={styles.thumbnailImage}
             onError={handleThumbError}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           <VideoPlayOverlay size={50} iconSize={22} />
         </View>
@@ -224,9 +224,11 @@ const styles = StyleSheet.create({
   },
   thumbnailContainer: {
     width: '100%',
-    height: 180,
-    backgroundColor: '#000000',
+    height: 220,
     position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   thumbnailImage: {
     width: '100%',

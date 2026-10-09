@@ -76,11 +76,11 @@ export const GenericCard: React.FC<GenericCardProps> = ({
     >
       {/* Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
-        <View style={styles.mediaContainer}>
+        <View style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={190}
+            height={320}
             onFallbackOpen={handleCardPress}
           />
           {bookmark.is_article && (
@@ -94,7 +94,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
         <View style={styles.carouselContainer}>
           <SlidableMedia
             images={mediaDetails.imageUrls}
-            height={200}
+            height={320}
             onFallbackOpen={handleCardPress}
           />
           {bookmark.is_article && (
@@ -105,11 +105,11 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           )}
         </View>
       ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
-        <View style={styles.mediaContainer}>
+        <View style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
           <SafeImage
             url={mediaDetails.imageUrls[0] || mediaDetails.posterUrl}
             style={styles.mediaImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           {bookmark.is_article && (
             <View style={styles.articleBadge}>
@@ -270,11 +270,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   mediaContainer: {
-    height: 190,
+    height: 320,
     width: '100%',
-    backgroundColor: '#EBE5DC',
     position: 'relative',
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   carouselContainer: {
     width: '100%',
