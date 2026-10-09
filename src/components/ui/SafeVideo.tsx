@@ -19,6 +19,7 @@ interface SafeVideoProps {
   style?: StyleProp<ViewStyle>;
   imageStyle?: StyleProp<ImageStyle>;
   height?: number;
+  onPressMedia?: () => void;
   onFallbackOpen?: () => void;
 }
 
@@ -63,6 +64,7 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
   style,
   imageStyle,
   height = 350,
+  onPressMedia,
   onFallbackOpen,
 }) => {
   const { isDark } = useTheme();
@@ -70,6 +72,10 @@ export const SafeVideo: React.FC<SafeVideoProps> = ({
 
   const handleStartPlay = (e: any) => {
     e?.stopPropagation?.();
+    if (onPressMedia) {
+      onPressMedia();
+      return;
+    }
     if (videoUrl && videoUrl.trim()) {
       setIsPlaying(true);
     } else if (onFallbackOpen) {

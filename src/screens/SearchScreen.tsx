@@ -34,6 +34,7 @@ interface SearchScreenProps {
   onReadArticle: (bookmark: Bookmark) => void;
   onViewAiContext: (bookmark: Bookmark) => void;
   planInfo: UserPlanInfo | null;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const SearchScreen: React.FC<SearchScreenProps> = ({
@@ -42,6 +43,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
   onReadArticle,
   onViewAiContext,
   planInfo,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
 
@@ -326,6 +328,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
               onOpenMenu={onOpenMenu}
               onReadArticle={onReadArticle}
               onViewAiContext={onViewAiContext}
+              onOpenMedia={onOpenMedia}
             />
           )}
           contentContainerStyle={[

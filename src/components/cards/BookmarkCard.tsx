@@ -16,6 +16,7 @@ interface BookmarkCardProps {
   onOpenMenu: (bookmark: Bookmark) => void;
   onReadArticle?: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const BookmarkCard: React.FC<BookmarkCardProps> = React.memo((props) => {

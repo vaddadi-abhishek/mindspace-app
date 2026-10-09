@@ -28,6 +28,7 @@ interface GenericCardProps {
   onOpenMenu: (bookmark: Bookmark) => void;
   onReadArticle?: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const GenericCard: React.FC<GenericCardProps> = ({
@@ -35,6 +36,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
   onOpenMenu,
   onReadArticle,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const [imageError, setImageError] = useState(false);
@@ -81,6 +83,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={320}
+            onPressMedia={() => onOpenMedia ? onOpenMedia(bookmark, 0) : undefined}
             onFallbackOpen={handleCardPress}
           />
           {bookmark.is_article && (
@@ -95,6 +98,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           <SlidableMedia
             images={mediaDetails.imageUrls}
             height={320}
+            onPressItem={(idx) => onOpenMedia ? onOpenMedia(bookmark, idx) : handleCardPress()}
             onFallbackOpen={handleCardPress}
           />
           {bookmark.is_article && (
@@ -105,7 +109,11 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           )}
         </View>
       ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
-        <View style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleCardPress()}
+          style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={mediaDetails.imageUrls[0] || mediaDetails.posterUrl}
             style={styles.mediaImage}
@@ -117,7 +125,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
               <Text style={styles.articleBadgeText}>Article</Text>
             </View>
           )}
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       {/* Card Content */}

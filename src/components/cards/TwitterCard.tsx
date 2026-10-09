@@ -64,12 +64,14 @@ interface TwitterCardProps {
   bookmark: Bookmark;
   onOpenMenu: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const TwitterCard: React.FC<TwitterCardProps> = ({
   bookmark,
   onOpenMenu,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const cardData = parseCardData<XCardData>(bookmark.card_data);
@@ -331,6 +333,7 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={350}
+            onPressMedia={() => onOpenMedia ? onOpenMedia(bookmark, 0) : undefined}
             onFallbackOpen={handleOpenTweet}
           />
         </View>
@@ -339,17 +342,22 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
           <TwitterImageGrid
             images={mediaDetails.imageUrls}
             height={mediaDetails.imageUrls.length === 1 ? 350 : 260}
+            onPressImage={(idx) => onOpenMedia ? onOpenMedia(bookmark, idx) : handleOpenTweet()}
             onPressCard={handleOpenTweet}
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleOpenTweet()}
+          style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       {/* Date & Views Row */}

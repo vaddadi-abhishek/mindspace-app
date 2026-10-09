@@ -92,12 +92,14 @@ interface FacebookCardProps {
   bookmark: Bookmark;
   onOpenMenu: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const FacebookCard: React.FC<FacebookCardProps> = ({
   bookmark,
   onOpenMenu,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const cardData = parseCardData<FacebookCardData>(bookmark.card_data);
@@ -335,6 +337,7 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={350}
+            onPressMedia={() => onOpenMedia ? onOpenMedia(bookmark, 0) : undefined}
             onFallbackOpen={handleOpenPost}
           />
         </View>
@@ -343,18 +346,23 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
           <SlidableMedia
             images={mediaDetails.imageUrls}
             height={350}
+            onPressItem={(idx) => onOpenMedia ? onOpenMedia(bookmark, idx) : handleOpenPost()}
             onFallbackOpen={handleOpenPost}
             dotActiveColor="#1877F2"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleOpenPost()}
+          style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       {/* Metrics & Actions Row */}

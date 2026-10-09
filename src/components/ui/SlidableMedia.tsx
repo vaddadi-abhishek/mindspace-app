@@ -147,6 +147,7 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
             videoUrl={item.url}
             posterUrl={item.posterUrl}
             height={height}
+            onPressMedia={() => handlePress(0)}
             onFallbackOpen={onFallbackOpen}
           />
         ) : (
@@ -199,6 +200,7 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
                   videoUrl={item.url}
                   posterUrl={item.posterUrl}
                   height={height}
+                  onPressMedia={() => handlePress(idx)}
                   onFallbackOpen={onFallbackOpen}
                 />
               ) : (

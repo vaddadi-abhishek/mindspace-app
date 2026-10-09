@@ -24,12 +24,14 @@ interface YouTubeCardProps {
   bookmark: Bookmark;
   onOpenMenu: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const YouTubeCard: React.FC<YouTubeCardProps> = ({
   bookmark,
   onOpenMenu,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const cardData = parseCardData<YouTubeCardData>(bookmark.card_data);
@@ -101,7 +103,11 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
     >
       {/* Video Thumbnail with Play Button */}
       {thumbSrc && (
-        <View style={[styles.thumbnailContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleOpenVideo()}
+          style={[styles.thumbnailContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={thumbSrc}
             style={styles.thumbnailImage}
@@ -109,7 +115,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
             resizeMode="contain"
           />
           <VideoPlayOverlay size={50} iconSize={22} />
-        </View>
+        </TouchableOpacity>
       )}
 
       {/* Video Info */}

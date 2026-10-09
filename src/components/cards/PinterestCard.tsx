@@ -27,12 +27,14 @@ interface PinterestCardProps {
   bookmark: Bookmark;
   onOpenMenu: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const PinterestCard: React.FC<PinterestCardProps> = ({
   bookmark,
   onOpenMenu,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const cardData = parseCardData<PinterestCardData>(bookmark.card_data);
@@ -69,6 +71,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={350}
+            onPressMedia={() => onOpenMedia ? onOpenMedia(bookmark, 0) : undefined}
             onFallbackOpen={handleOpenPin}
           />
           <TouchableOpacity
@@ -87,6 +90,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
           <SlidableMedia
             images={mediaDetails.imageUrls}
             height={350}
+            onPressItem={(idx) => onOpenMedia ? onOpenMedia(bookmark, idx) : handleOpenPin()}
             onFallbackOpen={handleOpenPin}
             dotActiveColor="#E60023"
           />
@@ -102,7 +106,11 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
           </TouchableOpacity>
         </View>
       ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
-        <View style={[styles.imageContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleOpenPin()}
+          style={[styles.imageContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={mediaDetails.imageUrls[0] || mediaDetails.posterUrl}
             style={styles.pinImage}
@@ -118,7 +126,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
           >
             <MoreVertical size={16} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       <View style={styles.body}>

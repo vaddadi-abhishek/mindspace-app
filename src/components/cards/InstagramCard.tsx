@@ -60,12 +60,14 @@ interface InstagramCardProps {
   bookmark: Bookmark;
   onOpenMenu: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const InstagramCard: React.FC<InstagramCardProps> = ({
   bookmark,
   onOpenMenu,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const cardData = parseCardData<InstagramCardData>(bookmark.card_data);
@@ -318,6 +320,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={360}
+            onPressMedia={() => onOpenMedia ? onOpenMedia(bookmark, 0) : undefined}
             onFallbackOpen={handleOpenPost}
           />
         </View>
@@ -326,18 +329,23 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
           <SlidableMedia
             images={mediaDetails.imageUrls}
             height={360}
+            onPressItem={(idx) => onOpenMedia ? onOpenMedia(bookmark, idx) : handleOpenPost()}
             onFallbackOpen={handleOpenPost}
             dotActiveColor="#0095F6"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleOpenPost()}
+          style={[styles.mediaContainer, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       {/* Content & Metrics */}

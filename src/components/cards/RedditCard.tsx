@@ -30,12 +30,14 @@ interface RedditCardProps {
   bookmark: Bookmark;
   onOpenMenu: (bookmark: Bookmark) => void;
   onViewAiContext?: (bookmark: Bookmark) => void;
+  onOpenMedia?: (bookmark: Bookmark, initialIndex?: number) => void;
 }
 
 export const RedditCard: React.FC<RedditCardProps> = ({
   bookmark,
   onOpenMenu,
   onViewAiContext,
+  onOpenMedia,
 }) => {
   const { colors, isDark } = useTheme();
   const cardData = parseCardData<RedditCardData>(bookmark.card_data);
@@ -137,6 +139,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={350}
+            onPressMedia={() => onOpenMedia ? onOpenMedia(bookmark, 0) : undefined}
             onFallbackOpen={handleOpenPost}
           />
         </View>
@@ -145,18 +148,23 @@ export const RedditCard: React.FC<RedditCardProps> = ({
           <SlidableMedia
             images={mediaDetails.imageUrls}
             height={350}
+            onPressItem={(idx) => onOpenMedia ? onOpenMedia(bookmark, idx) : handleOpenPost()}
             onFallbackOpen={handleOpenPost}
             dotActiveColor="#FF4500"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
-        <View style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => onOpenMedia ? onOpenMedia(bookmark, 0) : handleOpenPost()}
+          style={[styles.mediaWrap, { backgroundColor: isDark ? '#000000' : '#F1EFEA' }]}
+        >
           <SafeImage
             url={mediaDetails.posterUrl}
             style={styles.mediaImage}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
       ) : null}
 
       {/* Metrics Row - Reddit Pill Container & Share */}

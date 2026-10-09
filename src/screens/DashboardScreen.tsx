@@ -43,6 +43,7 @@ import { CardActionSheet } from '../components/modals/CardActionSheet';
 import { AiContextModal } from '../components/modals/AiContextModal';
 import { ReaderModal } from '../components/modals/ReaderModal';
 import { DeleteConfirmModal } from '../components/modals/DeleteConfirmModal';
+import { FullScreenMediaModal } from '../components/modals/FullScreenMediaModal';
 import { SearchScreen } from './SearchScreen';
 import { NotificationsScreen } from './NotificationsScreen';
 import { ProfileScreen } from './ProfileScreen';
@@ -103,6 +104,7 @@ export const DashboardScreen: React.FC = () => {
   const [selectedBookmarkForAi, setSelectedBookmarkForAi] = useState<Bookmark | null>(null);
   const [selectedBookmarkForReader, setSelectedBookmarkForReader] = useState<Bookmark | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [selectedMediaForViewer, setSelectedMediaForViewer] = useState<{ bookmark: Bookmark; initialIndex?: number } | null>(null);
 
   // Floating Nav Bar active tab (home, notifications, profile)
   const [activeTab, setActiveTab] = useState<FloatingNavTab>('home');
@@ -247,6 +249,9 @@ export const DashboardScreen: React.FC = () => {
     try {
       await deleteBookmark(deleteTargetId);
       setBookmarks((prev) => prev.filter((b) => b.id !== deleteTargetId));
+      if (selectedMediaForViewer?.bookmark.id === deleteTargetId) {
+        setSelectedMediaForViewer(null);
+      }
       addToast('Bookmark deleted', 'success');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete';
@@ -330,11 +335,12 @@ export const DashboardScreen: React.FC = () => {
 
 
   return (
-    <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      {/* 1. Home / Bookmark Feed Screen */}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaView
+        edges={['top', 'left', 'right']}
+        style={[styles.safeArea, { backgroundColor: colors.background }]}
+      >
+        {/* 1. Home / Bookmark Feed Screen */}
       <View
         style={[
           styles.screenContainer,
@@ -356,6 +362,7 @@ export const DashboardScreen: React.FC = () => {
               onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
               onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
               onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
+              onOpenMedia={(bm, idx) => setSelectedMediaForViewer({ bookmark: bm, initialIndex: idx })}
             />
           )}
           contentContainerStyle={[
@@ -413,6 +420,7 @@ export const DashboardScreen: React.FC = () => {
           onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
           onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
           onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
+          onOpenMedia={(bm, idx) => setSelectedMediaForViewer({ bookmark: bm, initialIndex: idx })}
           planInfo={planInfo}
         />
       </View>
@@ -444,14 +452,24 @@ export const DashboardScreen: React.FC = () => {
         />
       </View>
 
-      {/* Floating Capsule Navbar */}
-      <FloatingNavBar
-        activeTab={activeTab}
-        onSelectTab={handleSelectTab}
-      />
+        {/* Floating Capsule Navbar */}
+        <FloatingNavBar
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+        />
 
-      {/* Floating Toast HUD (Single Unified Pill Notification Component) */}
-      <ToastHud toasts={toasts} onDismiss={dismissToast} />
+        {/* Floating Toast HUD (Single Unified Pill Notification Component) */}
+        <ToastHud toasts={toasts} onDismiss={dismissToast} />
+      </SafeAreaView>
+
+      {/* Fullscreen Media Viewer (Backdrop clicks disabled, Reels overlay, top-left close, top-right menu) */}
+      <FullScreenMediaModal
+        visible={Boolean(selectedMediaForViewer)}
+        bookmark={selectedMediaForViewer?.bookmark || null}
+        initialIndex={selectedMediaForViewer?.initialIndex ?? 0}
+        onClose={() => setSelectedMediaForViewer(null)}
+        onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
+      />
 
       {/* Modals */}
       <AddBookmarkModal
@@ -510,7 +528,7 @@ export const DashboardScreen: React.FC = () => {
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleDeleteConfirm}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
