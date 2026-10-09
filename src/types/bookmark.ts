@@ -16,10 +16,22 @@ export interface XCardData {
     likes?: number;
     views?: number;
     bookmarks?: number;
-  };
-  media: MediaItem[];
+    following?: number;
+    followers?: number;
+  } | null;
+  media: MediaItem[] | null;
   posted_at: string;
   video_thumbnail?: string | null;
+  type?: string | null;
+  page_intent?: string | null;
+  article_content?: string | null;
+  word_count?: number | null;
+  reading_time_minutes?: number | null;
+  is_profile?: boolean;
+  banner_url?: string | null;
+  joined_date?: string | null;
+  bio?: string | null;
+  website?: string | null;
 }
 
 export interface InstagramCardData {
@@ -33,24 +45,32 @@ export interface InstagramCardData {
     likes?: number;
     comments?: number;
     reposts?: number;
-  };
+  } | null;
   media: MediaItem[];
   images?: Array<string | { url?: string; src?: string; display_url?: string; [key: string]: unknown }>;
   posted_at: string;
   video_thumbnail?: string | null;
+  is_profile?: boolean;
 }
 
 export interface FacebookCardData {
   author: {
     name: string;
     avatar_url: string | null;
+    verified?: boolean;
   };
   metrics: {
     likes?: number;
     comments?: number;
     shares?: number;
-  };
-  media: MediaItem[];
+  } | null;
+  followers?: string | number | null;
+  following?: string | number | null;
+  is_profile?: boolean;
+  banner_url?: string | null;
+  category?: string | null;
+  media: MediaItem[] | null;
+  images?: string[] | null;
   posted_at: string | null;
   video_thumbnail?: string | null;
 }
@@ -64,7 +84,7 @@ export interface LinkedInCardData {
     reactions?: number;
     comments?: number;
     reposts?: number;
-  };
+  } | null;
   media?: MediaItem[];
   posted_at: string | null;
   video_thumbnail?: string | null;
@@ -86,7 +106,7 @@ export interface RedditCardData {
   metrics: {
     upvotes?: number;
     comments?: number;
-  };
+  } | null;
   posted_at: string | null;
   media: MediaItem[] | null;
   video_thumbnail?: string | null;

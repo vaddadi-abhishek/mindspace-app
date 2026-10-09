@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,13 @@ import {
   formatNumber,
   formatRelativeDate,
   extractMetrics,
+  isVideoBookmark,
+  extractMediaDetails,
 } from '../../utils/helpers';
+import { RedditBrandLogo } from './SocialCardIcons';
+import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
+import { SafeImage } from '../ui/SafeImage';
+import { SafeVideo } from '../ui/SafeVideo';
 
 interface RedditCardProps {
   bookmark: Bookmark;
@@ -39,8 +45,11 @@ export const RedditCard: React.FC<RedditCardProps> = ({
   };
 
   const metrics = extractMetrics(cardData, bookmark);
-  const media = cardData?.media || [];
-  const imageUrl = media[0]?.url || cardData?.video_thumbnail || bookmark.snapshot_url;
+  const mediaDetails = useMemo(() => {
+    return extractMediaDetails(bookmark, cardData);
+  }, [bookmark, cardData]);
+
+  const hasMedia = Boolean(mediaDetails.isVideo || mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl);
 
   const handleOpenPost = () => {
     const clean = sanitizeUrl(bookmark.url);
@@ -76,13 +85,13 @@ export const RedditCard: React.FC<RedditCardProps> = ({
       <View style={styles.header}>
         <View style={styles.subRow}>
           {subreddit.icon_url ? (
-            <Image source={{ uri: subreddit.icon_url }} style={styles.icon} />
+            <SafeImage url={subreddit.icon_url} style={styles.icon} />
           ) : (
             <View style={styles.iconFallback}>
               <Text style={styles.iconInitial}>r/</Text>
             </View>
           )}
-          <View>
+          <View style={styles.subMeta}>
             <Text style={[styles.subName, { color: colors.textHeading }]}>
               {subreddit.name.startsWith('r/') ? subreddit.name : `r/${subreddit.name}`}
             </Text>
@@ -93,16 +102,19 @@ export const RedditCard: React.FC<RedditCardProps> = ({
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onOpenMenu(bookmark);
-          }}
-          style={styles.menuBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <MoreVertical size={16} color={colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <RedditBrandLogo size={20} />
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.menuBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Post Title */}
@@ -110,19 +122,45 @@ export const RedditCard: React.FC<RedditCardProps> = ({
         {bookmark.title || bookmark.url}
       </Text>
 
-      {/* Description text */}
-      {Boolean(bookmark.description && bookmark.description !== bookmark.title) && (
-        <Text style={[styles.bodyText, { color: colors.textBody }]} numberOfLines={2}>
+      {/* Description text (only when NO media) */}
+      {!hasMedia && Boolean(bookmark.description && bookmark.description.trim() !== bookmark.title?.trim()) && (
+        <Text style={[styles.bodyText, { color: colors.textBody }]} numberOfLines={3}>
           {bookmark.description}
         </Text>
       )}
 
-      {/* Media Image */}
-      {imageUrl && (
+      {/* Media: Video or Images */}
+      {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaWrap}>
-          <Image source={{ uri: imageUrl }} style={styles.mediaImage} resizeMode="cover" />
+          <SafeVideo
+            videoUrl={mediaDetails.videoUrl}
+            posterUrl={mediaDetails.posterUrl}
+            height={220}
+            onFallbackOpen={handleOpenPost}
+          />
         </View>
-      )}
+      ) : mediaDetails.imageUrls.length > 0 ? (
+        <View style={styles.mediaWrap}>
+          <SafeImage
+            url={mediaDetails.imageUrls[0]}
+            style={styles.mediaImage}
+            resizeMode="cover"
+          />
+          {mediaDetails.imageUrls.length > 1 && (
+            <View style={styles.carouselBadge}>
+              <Text style={styles.carouselBadgeText}>1/{mediaDetails.imageUrls.length}</Text>
+            </View>
+          )}
+        </View>
+      ) : mediaDetails.posterUrl ? (
+        <View style={styles.mediaWrap}>
+          <SafeImage
+            url={mediaDetails.posterUrl}
+            style={styles.mediaImage}
+            resizeMode="cover"
+          />
+        </View>
+      ) : null}
 
       {/* Metrics Row - Reddit Pill Container & Share */}
       <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
@@ -209,12 +247,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  subMeta: {
+    flex: 1,
+  },
   subName: {
     fontSize: 13,
     fontWeight: '700',
   },
   postMeta: {
     fontSize: 11,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   menuBtn: {
     padding: 2,
@@ -231,15 +277,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mediaWrap: {
-    height: 160,
+    height: 170,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 10,
     backgroundColor: '#EBE5DC',
+    position: 'relative',
   },
   mediaImage: {
     width: '100%',
     height: '100%',
+  },
+  carouselBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  carouselBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',

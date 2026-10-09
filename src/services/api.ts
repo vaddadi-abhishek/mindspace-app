@@ -13,6 +13,12 @@ import type {
 export const AUTH_TOKEN_KEY = 'mindspace_auth_token';
 export const AUTH_REFRESH_TOKEN_KEY = 'mindspace_refresh_token';
 
+let cachedMemoryToken: string | null = null;
+
+export function getCachedAuthToken(): string | null {
+  return cachedMemoryToken;
+}
+
 /**
  * Reads token from hardware-backed SecureStore, with a transparent one-time
  * migration from legacy AsyncStorage for existing logged-in sessions.
@@ -27,6 +33,7 @@ export async function getSecureAuthToken(): Promise<string | null> {
         await AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {});
       }
     }
+    cachedMemoryToken = token;
     return token;
   } catch (err) {
     console.warn('[SecureStore] Failed to read auth token:', err);
@@ -34,8 +41,12 @@ export async function getSecureAuthToken(): Promise<string | null> {
   }
 }
 
+// Warm in-memory cache eagerly
+getSecureAuthToken().catch(() => {});
+
 export async function setSecureAuthToken(token: string): Promise<void> {
   try {
+    cachedMemoryToken = token;
     await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
     await AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {});
   } catch (err) {
@@ -70,6 +81,7 @@ export async function setSecureRefreshToken(refreshToken: string): Promise<void>
 }
 
 export async function removeSecureTokens(): Promise<void> {
+  cachedMemoryToken = null;
   try {
     await Promise.all([
       SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {}),

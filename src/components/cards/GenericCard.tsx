@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,12 @@ import {
   getFaviconUrl,
   parseCardData,
   formatRelativeDate,
+  isVideoBookmark,
+  extractMediaDetails,
 } from '../../utils/helpers';
+import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
+import { SafeImage } from '../ui/SafeImage';
+import { SafeVideo } from '../ui/SafeVideo';
 
 interface GenericCardProps {
   bookmark: Bookmark;
@@ -35,13 +40,10 @@ export const GenericCard: React.FC<GenericCardProps> = ({
   const [logoError, setLogoError] = useState(false);
 
   const cardData = parseCardData<GlobalWebCardData>(bookmark.card_data);
-  const snapshotUrl =
-    cardData?.snapshot ||
-    bookmark.snapshot_url ||
-    (bookmark as { snapshot?: string | null }).snapshot ||
-    null;
-
-  const mediaUrl = !imageError && snapshotUrl ? snapshotUrl : null;
+  const mediaDetails = useMemo(() => {
+    return extractMediaDetails(bookmark, cardData);
+  }, [bookmark, cardData]);
+  const hasMedia = Boolean(mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl || mediaDetails.isVideo);
   const favicon = getFaviconUrl(bookmark.url);
   const logoSrc = !logoError && bookmark.logo ? bookmark.logo : favicon;
 
@@ -71,13 +73,27 @@ export const GenericCard: React.FC<GenericCardProps> = ({
         },
       ]}
     >
-      {/* Media Image */}
-      {mediaUrl && (
+      {/* Media: Video or Image */}
+      {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaContainer}>
-          <Image
-            source={{ uri: mediaUrl }}
+          <SafeVideo
+            videoUrl={mediaDetails.videoUrl}
+            posterUrl={mediaDetails.posterUrl}
+            height={190}
+            onFallbackOpen={handleCardPress}
+          />
+          {bookmark.is_article && (
+            <View style={styles.articleBadge}>
+              <BookOpen size={11} color="#FFFFFF" />
+              <Text style={styles.articleBadgeText}>Article</Text>
+            </View>
+          )}
+        </View>
+      ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
+        <View style={styles.mediaContainer}>
+          <SafeImage
+            url={mediaDetails.imageUrls[0] || mediaDetails.posterUrl}
             style={styles.mediaImage}
-            onError={() => setImageError(true)}
             resizeMode="cover"
           />
           {bookmark.is_article && (
@@ -87,7 +103,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
             </View>
           )}
         </View>
-      )}
+      ) : null}
 
       {/* Card Content */}
       <View style={styles.body}>
@@ -95,8 +111,8 @@ export const GenericCard: React.FC<GenericCardProps> = ({
         <View style={styles.topMetaRow}>
           <View style={styles.sourceGroup}>
             {logoSrc ? (
-              <Image
-                source={{ uri: logoSrc }}
+              <SafeImage
+                url={logoSrc}
                 style={styles.logoIcon}
                 onError={() => setLogoError(true)}
               />
@@ -205,7 +221,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
             </View>
           )}
 
-          {bookmark.is_article && !mediaUrl && !cardData?.reading_time_minutes && (
+          {bookmark.is_article && !hasMedia && !cardData?.reading_time_minutes && (
             <View
               style={[
                 styles.aiPill,

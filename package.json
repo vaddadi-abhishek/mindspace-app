@@ -13,6 +13,7 @@
     "expo-secure-store": "~57.0.4",
     "expo-share-intent": "^8.0.1",
     "expo-status-bar": "~57.0.1",
+    "expo-video": "~57.0.5",
     "lucide-react-native": "^1.48.0",
     "punycode": "^2.3.1",
     "react": "19.2.3",

@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Linking,
   Share,
 } from 'react-native';
-import { Play, MoreVertical, ThumbsUp, ThumbsDown, Share2, CheckCircle } from 'lucide-react-native';
+import { MoreVertical, ThumbsUp, ThumbsDown, Share2, CheckCircle } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, YouTubeCardData } from '../../types/bookmark';
 import {
@@ -18,6 +17,8 @@ import {
   formatRelativeDate,
   extractMetrics,
 } from '../../utils/helpers';
+import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
+import { SafeImage } from '../ui/SafeImage';
 
 interface YouTubeCardProps {
   bookmark: Bookmark;
@@ -39,16 +40,38 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
   };
 
   const metrics = extractMetrics(cardData, bookmark);
-  const thumbnail =
-    cardData?.video_thumbnail ||
-    bookmark.snapshot_url ||
-    (cardData?.video_id ? `https://img.youtube.com/vi/${cardData.video_id}/hqdefault.jpg` : null);
 
-  const [thumbError, setThumbError] = useState(false);
+  const [thumbSrc, setThumbSrc] = useState<string | null>(() => {
+    if (cardData?.video_thumbnail) return cardData.video_thumbnail;
+    if (bookmark.snapshot_url) return bookmark.snapshot_url;
+    if (cardData?.video_id) return `https://i.ytimg.com/vi/${cardData.video_id}/maxresdefault.jpg`;
+    return null;
+  });
 
-  const handleOpenVideo = () => {
+  const handleThumbError = () => {
+    if (cardData?.video_id && thumbSrc?.includes('maxresdefault.jpg')) {
+      setThumbSrc(`https://i.ytimg.com/vi/${cardData.video_id}/hqdefault.jpg`);
+    } else if (cardData?.video_id && thumbSrc?.includes('hqdefault.jpg')) {
+      setThumbSrc(`https://i.ytimg.com/vi/${cardData.video_id}/mqdefault.jpg`);
+    } else {
+      setThumbSrc(bookmark.snapshot_url || null);
+    }
+  };
+
+  const handleOpenVideo = async () => {
     const clean = sanitizeUrl(bookmark.url);
-    if (clean) Linking.openURL(clean).catch(() => {});
+    if (!clean) return;
+    if (cardData?.video_id) {
+      const appUrl = `vnd.youtube://${cardData.video_id}`;
+      try {
+        const canOpen = await Linking.canOpenURL(appUrl);
+        if (canOpen) {
+          await Linking.openURL(appUrl);
+          return;
+        }
+      } catch {}
+    }
+    Linking.openURL(clean).catch(() => {});
   };
 
   const handleShare = async () => {
@@ -77,19 +100,15 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
       ]}
     >
       {/* Video Thumbnail with Play Button */}
-      {thumbnail && !thumbError && (
+      {thumbSrc && (
         <View style={styles.thumbnailContainer}>
-          <Image
-            source={{ uri: thumbnail }}
+          <SafeImage
+            url={thumbSrc}
             style={styles.thumbnailImage}
-            onError={() => setThumbError(true)}
+            onError={handleThumbError}
             resizeMode="cover"
           />
-          <View style={styles.playOverlay}>
-            <View style={styles.playCircle}>
-              <Play size={20} color="#FFFFFF" fill="#FFFFFF" style={{ marginLeft: 2 }} />
-            </View>
-          </View>
+          <VideoPlayOverlay size={50} iconSize={22} />
         </View>
       )}
 
@@ -97,7 +116,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
       <View style={styles.body}>
         <View style={styles.channelRow}>
           {channel.avatar_url ? (
-            <Image source={{ uri: channel.avatar_url }} style={styles.avatar} />
+            <SafeImage url={channel.avatar_url} style={styles.avatar} />
           ) : (
             <View style={[styles.avatarFallback, { backgroundColor: '#FF0000' }]}>
               <Text style={styles.avatarInitial}>
@@ -213,23 +232,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     opacity: 0.9,
-  },
-  playOverlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 0, 0, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   body: {
     padding: 12,

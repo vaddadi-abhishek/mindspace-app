@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,12 @@ import {
   parseCardData,
   formatNumber,
   extractMetrics,
+  isVideoBookmark,
+  extractMediaDetails,
 } from '../../utils/helpers';
+import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
+import { SafeImage } from '../ui/SafeImage';
+import { SafeVideo } from '../ui/SafeVideo';
 
 interface PinterestCardProps {
   bookmark: Bookmark;
@@ -31,8 +36,9 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
   const { colors } = useTheme();
   const cardData = parseCardData<PinterestCardData>(bookmark.card_data);
 
-  const media = cardData?.media || [];
-  const imageUrl = media[0]?.url || cardData?.video_thumbnail || bookmark.snapshot_url;
+  const mediaDetails = useMemo(() => {
+    return extractMediaDetails(bookmark, cardData);
+  }, [bookmark, cardData]);
   const metrics = extractMetrics(cardData, bookmark);
 
   const handleOpenPin = () => {
@@ -56,9 +62,14 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
         },
       ]}
     >
-      {imageUrl && (
+      {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.imageContainer}>
-          <Image source={{ uri: imageUrl }} style={styles.pinImage} resizeMode="cover" />
+          <SafeVideo
+            videoUrl={mediaDetails.videoUrl}
+            posterUrl={mediaDetails.posterUrl}
+            height={220}
+            onFallbackOpen={handleOpenPin}
+          />
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
@@ -70,7 +81,25 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             <MoreVertical size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      )}
+      ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
+        <View style={styles.imageContainer}>
+          <SafeImage
+            url={mediaDetails.imageUrls[0] || mediaDetails.posterUrl}
+            style={styles.pinImage}
+            resizeMode="cover"
+          />
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.floatingMenu}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <View style={styles.body}>
         <Text style={[styles.title, { color: colors.textHeading }]} numberOfLines={2}>
@@ -80,7 +109,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
         <View style={styles.bottomRow}>
           <View style={styles.sourceRow}>
             {bookmark.logo ? (
-              <Image source={{ uri: bookmark.logo }} style={styles.logo} />
+              <SafeImage url={bookmark.logo} style={styles.logo} />
             ) : null}
             <Text style={[styles.sourceText, { color: colors.textMuted }]}>
               {cardData?.author?.name || bookmark.site_name || 'Pinterest'}

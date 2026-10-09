@@ -61,6 +61,8 @@ export interface ExtractedMetrics {
   upvotes?: number | string | null;
   reactions?: number | string | null;
   saves?: number | string | null;
+  following?: number | string | null;
+  followers?: number | string | null;
 }
 
 export function extractMetrics(cardData: any, rootBookmark?: any): ExtractedMetrics {
@@ -76,6 +78,8 @@ export function extractMetrics(cardData: any, rootBookmark?: any): ExtractedMetr
     upvotes: m.upvotes ?? cardData?.upvotes ?? rootBookmark?.upvotes ?? null,
     reactions: m.reactions ?? cardData?.reactions ?? rootBookmark?.reactions ?? null,
     saves: m.saves ?? cardData?.saves ?? rootBookmark?.saves ?? null,
+    following: m.following ?? cardData?.following ?? null,
+    followers: m.followers ?? cardData?.followers ?? null,
   };
 }
 
@@ -216,4 +220,237 @@ export function matchesPlatform(bookmark: Bookmark, filter: PlatformType): boole
   const cardType = resolveCardType(bookmark);
   if (filter === 'articles') return Boolean(bookmark.is_article || cardType === 'article');
   return cardType === filter;
+}
+
+export function isImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim().toLowerCase();
+  if (!clean) return false;
+
+  if (clean.startsWith('data:image/')) return true;
+
+  const urlWithoutQuery = clean.split('?')[0];
+  if (
+    /\.(jpg|jpeg|png|webp|gif|svg|ico|bmp|tiff|heic)$/i.test(urlWithoutQuery) ||
+    clean.includes('format=jpg') ||
+    clean.includes('format=jpeg') ||
+    clean.includes('format=png') ||
+    clean.includes('format=webp') ||
+    clean.includes('f_jpg') ||
+    clean.includes('f_png') ||
+    clean.includes('f_webp') ||
+    clean.includes('format=auto') ||
+    clean.includes('_thumb') ||
+    clean.includes('video_thumb')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function isVideoUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const clean = url.trim().toLowerCase();
+  if (!clean) return false;
+
+  // Never classify known image formats or thumbnails as video streams
+  if (isImageUrl(clean)) {
+    return false;
+  }
+
+  const urlWithoutQuery = clean.split('?')[0];
+
+  // Direct playable video extensions
+  if (/\.(mp4|mov|webm|m3u8|m4v|mpd|ts)$/i.test(urlWithoutQuery)) {
+    return true;
+  }
+
+  // Common video stream query parameters and mime-type indicators
+  if (
+    clean.includes('.mp4?') ||
+    clean.includes('.m3u8?') ||
+    clean.includes('format=mp4') ||
+    clean.includes('mime_type=video_mp4') ||
+    clean.includes('video/mp4')
+  ) {
+    return true;
+  }
+
+  // Dedicated video-only CDN endpoints (excluding thumbnails)
+  if (
+    (clean.includes('video.twimg.com') && !clean.includes('thumb')) ||
+    (clean.includes('v.redd.it') && !clean.includes('preview'))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isVideoBookmark(bookmark: Bookmark, cardData?: any): boolean {
+  const rawType = (bookmark.type || '').toLowerCase();
+  if (['video', 'reel', 'reels', 'shorts', 'youtube', 'tiktok'].includes(rawType)) {
+    return true;
+  }
+  if (cardData?.video_thumbnail || cardData?.video_id || cardData?.video_url || cardData?.playback_url) {
+    return true;
+  }
+  const rawMedia = cardData?.media;
+  if (Array.isArray(rawMedia)) {
+    for (const m of rawMedia) {
+      if (!m) continue;
+      if (typeof m === 'string' && isVideoUrl(m)) {
+        return true;
+      }
+      if (typeof m === 'object') {
+        if (m.type === 'video' || m.type === 'reel' || m.type === 'gif' || m.is_video === true) {
+          return true;
+        }
+        if (m.url && isVideoUrl(m.url)) {
+          return true;
+        }
+      }
+    }
+  }
+  const url = (bookmark.url || '').toLowerCase();
+  if (
+    url.includes('/reel/') ||
+    url.includes('/reels/') ||
+    url.includes('/watch') ||
+    url.includes('fb.watch') ||
+    url.includes('/shorts/') ||
+    url.includes('tiktok.com') ||
+    url.includes('v.redd.it') ||
+    isVideoUrl(url)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export interface MediaDetails {
+  videoUrl: string | null;
+  posterUrl: string | null;
+  imageUrls: string[];
+  isVideo: boolean;
+}
+
+export function extractMediaDetails(bookmark: Bookmark, cardData?: any): MediaDetails {
+  let videoUrl: string | null = null;
+  let posterUrl: string | null = null;
+  const imageUrls: string[] = [];
+
+  const recordVideo = (candidate?: string | null) => {
+    if (!candidate || typeof candidate !== 'string') return;
+    const trimmed = candidate.trim();
+    if (!trimmed) return;
+    if (isVideoUrl(trimmed)) {
+      if (!videoUrl) videoUrl = trimmed;
+    } else if (isImageUrl(trimmed)) {
+      if (!posterUrl) posterUrl = trimmed;
+      if (!imageUrls.includes(trimmed)) imageUrls.push(trimmed);
+    }
+  };
+
+  const recordPoster = (candidate?: string | null) => {
+    if (!candidate || typeof candidate !== 'string') return;
+    const trimmed = candidate.trim();
+    if (!trimmed) return;
+    if (!isVideoUrl(trimmed)) {
+      if (!posterUrl) posterUrl = trimmed;
+      if (!imageUrls.includes(trimmed)) imageUrls.push(trimmed);
+    }
+  };
+
+  // 1. Direct cardData video_url or playback properties
+  recordVideo(cardData?.video_url);
+  recordVideo(cardData?.videoUrl);
+  recordVideo(cardData?.playback_url);
+  recordVideo(cardData?.stream_url);
+
+  // 2. Scan cardData.media
+  if (Array.isArray(cardData?.media)) {
+    for (const m of cardData.media) {
+      if (!m) continue;
+      if (typeof m === 'string') {
+        const trimmed = m.trim();
+        if (isVideoUrl(trimmed)) {
+          recordVideo(trimmed);
+        } else if (trimmed) {
+          if (!imageUrls.includes(trimmed)) imageUrls.push(trimmed);
+          if (!posterUrl && !isVideoUrl(trimmed)) posterUrl = trimmed;
+        }
+      } else if (typeof m === 'object') {
+        const itemUrl = (m.url || '').trim();
+        const itemType = (m.type || '').toLowerCase();
+        const isItemVid =
+          itemType === 'video' ||
+          itemType === 'reel' ||
+          itemType === 'gif' ||
+          m.is_video === true ||
+          isVideoUrl(itemUrl);
+
+        if (isItemVid) {
+          if (itemUrl && !isImageUrl(itemUrl)) {
+            recordVideo(itemUrl);
+          }
+          recordPoster(m.thumbnail_url || m.poster || m.thumbnail || m.preview_url || m.preview || m.cover);
+          if (!posterUrl && itemUrl && isImageUrl(itemUrl)) {
+            posterUrl = itemUrl;
+          }
+        } else if (itemUrl) {
+          if (!imageUrls.includes(itemUrl)) imageUrls.push(itemUrl);
+        }
+      }
+    }
+  }
+
+  // 3. Scan cardData.images
+  if (Array.isArray(cardData?.images)) {
+    for (const img of cardData.images) {
+      const u = typeof img === 'string' ? img.trim() : (img?.url || img?.src || '').trim();
+      if (u && !isVideoUrl(u) && !imageUrls.includes(u)) {
+        imageUrls.push(u);
+      }
+    }
+  }
+
+  // 4. Reddit specific video
+  if (!videoUrl && cardData?.reddit_video?.fallback_url) {
+    recordVideo(cardData.reddit_video.fallback_url);
+  }
+
+  // 5. Video thumbnail property
+  recordPoster(cardData?.video_thumbnail);
+  recordPoster(cardData?.videoThumbnail);
+  recordPoster(cardData?.thumbnail_url);
+  recordPoster(cardData?.thumbnail);
+
+  // 6. YouTube fallback
+  if (!posterUrl && cardData?.video_id) {
+    posterUrl = `https://i.ytimg.com/vi/${cardData.video_id}/hqdefault.jpg`;
+  }
+
+  // 7. Bookmark snapshot fallback
+  const rawSnapshot = bookmark.snapshot_url || cardData?.snapshot || (bookmark as any).snapshot;
+  recordPoster(rawSnapshot);
+
+  // 8. First image in imageUrls as poster fallback
+  if (!posterUrl && imageUrls.length > 0) {
+    posterUrl = imageUrls[0];
+  }
+
+  // 9. Check if bookmark.url itself is a direct video
+  if (!videoUrl && isVideoUrl(bookmark.url)) {
+    videoUrl = bookmark.url.trim();
+  }
+
+  const isVideo = Boolean(videoUrl || isVideoBookmark(bookmark, cardData));
+
+  return {
+    videoUrl,
+    posterUrl,
+    imageUrls,
+    isVideo,
+  };
 }

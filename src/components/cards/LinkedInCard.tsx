@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Linking,
   Share,
 } from 'react-native';
-import { ThumbsUp, MessageSquare, Repeat, Share2, MoreVertical, FileText } from 'lucide-react-native';
+import { ThumbsUp, MessageSquare, Repeat, Share2, MoreVertical } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import type { Bookmark, LinkedInCardData } from '../../types/bookmark';
 import {
@@ -17,7 +17,12 @@ import {
   formatNumber,
   formatRelativeDate,
   extractMetrics,
+  isVideoBookmark,
+  extractMediaDetails,
 } from '../../utils/helpers';
+import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
+import { SafeImage } from '../ui/SafeImage';
+import { SafeVideo } from '../ui/SafeVideo';
 
 interface LinkedInCardProps {
   bookmark: Bookmark;
@@ -39,7 +44,9 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
   };
 
   const metrics = extractMetrics(cardData, bookmark);
-  const media = cardData?.media || [];
+  const mediaDetails = useMemo(() => {
+    return extractMediaDetails(bookmark, cardData);
+  }, [bookmark, cardData]);
   const [avatarError, setAvatarError] = useState(false);
 
   const handleOpenPost = () => {
@@ -78,8 +85,8 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
       <View style={styles.header}>
         <View style={styles.authorRow}>
           {author.avatar_url && !avatarError ? (
-            <Image
-              source={{ uri: author.avatar_url }}
+            <SafeImage
+              url={author.avatar_url}
               style={styles.avatar}
               onError={() => setAvatarError(true)}
             />
@@ -123,33 +130,33 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
         {bookmark.description || bookmark.title}
       </Text>
 
-      {/* Document attachment if available */}
-      {cardData?.document && (
-        <View style={[styles.docBox, { backgroundColor: colors.accentBg, borderColor: colors.accentBorder }]}>
-          <FileText size={20} color={colors.primary} />
-          <View style={styles.docInfo}>
-            <Text style={[styles.docTitle, { color: colors.textHeading }]} numberOfLines={1}>
-              {cardData.document.title || 'Document Attachment'}
-            </Text>
-            {Boolean(cardData.document.page_count) && (
-              <Text style={[styles.docPages, { color: colors.textMuted }]}>
-                {cardData.document.page_count} pages
-              </Text>
-            )}
-          </View>
-        </View>
-      )}
-
-      {/* Media Image */}
-      {media.length > 0 && media[0]?.url && (
+      {/* Media: Video or Images */}
+      {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaWrap}>
-          <Image
-            source={{ uri: media[0].url }}
+          <SafeVideo
+            videoUrl={mediaDetails.videoUrl}
+            posterUrl={mediaDetails.posterUrl}
+            height={200}
+            onFallbackOpen={handleOpenPost}
+          />
+        </View>
+      ) : mediaDetails.imageUrls.length > 0 ? (
+        <View style={styles.mediaWrap}>
+          <SafeImage
+            url={mediaDetails.imageUrls[0]}
             style={styles.mediaImage}
             resizeMode="cover"
           />
         </View>
-      )}
+      ) : mediaDetails.posterUrl ? (
+        <View style={styles.mediaWrap}>
+          <SafeImage
+            url={mediaDetails.posterUrl}
+            style={styles.mediaImage}
+            resizeMode="cover"
+          />
+        </View>
+      ) : null}
 
       {/* Metrics Summary Row (if metrics exist) */}
       {hasMetrics && (
@@ -274,26 +281,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 10,
-  },
-  docBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 10,
-    marginBottom: 10,
-  },
-  docInfo: {
-    flex: 1,
-  },
-  docTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  docPages: {
-    fontSize: 11,
-    marginTop: 2,
   },
   mediaWrap: {
     height: 170,
