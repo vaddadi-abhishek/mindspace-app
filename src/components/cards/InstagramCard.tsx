@@ -33,6 +33,7 @@ import { InstagramBrandLogo, VerifiedBadge } from './SocialCardIcons';
 import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
+import { SlidableMedia } from '../ui/SlidableMedia';
 
 function isInstagramProfileUrl(url?: string | null): boolean {
   if (!url) return false;
@@ -310,28 +311,24 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
         </View>
       </View>
 
-      {/* Main Media: Video or Images */}
+      {/* Main Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaContainer}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={260}
+            height={280}
             onFallbackOpen={handleOpenPost}
           />
         </View>
       ) : mediaDetails.imageUrls.length > 0 ? (
-        <View style={styles.mediaContainer}>
-          <SafeImage
-            url={mediaDetails.imageUrls[0]}
-            style={styles.mediaImage}
-            resizeMode="cover"
+        <View style={styles.carouselContainer}>
+          <SlidableMedia
+            images={mediaDetails.imageUrls}
+            height={280}
+            onFallbackOpen={handleOpenPost}
+            dotActiveColor="#0095F6"
           />
-          {mediaDetails.imageUrls.length > 1 && (
-            <View style={styles.carouselBadge}>
-              <Text style={styles.carouselBadgeText}>1/{mediaDetails.imageUrls.length}</Text>
-            </View>
-          )}
         </View>
       ) : mediaDetails.posterUrl ? (
         <View style={styles.mediaContainer}>
@@ -494,8 +491,13 @@ const styles = StyleSheet.create({
   },
   mediaContainer: {
     width: '100%',
-    height: 220,
-    backgroundColor: '#EBE5DC',
+    height: 280,
+    backgroundColor: '#000000',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  carouselContainer: {
+    width: '100%',
     position: 'relative',
   },
   mediaImage: {

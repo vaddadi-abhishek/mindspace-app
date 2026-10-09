@@ -36,6 +36,7 @@ import { XBrandLogo, VerifiedBadge } from './SocialCardIcons';
 import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
+import { TwitterImageGrid } from '../ui/TwitterImageGrid';
 
 function isTwitterProfileUrl(url?: string | null): boolean {
   if (!url) return false;
@@ -323,28 +324,23 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
         {bookmark.description || bookmark.title}
       </Text>
 
-      {/* Media: Video or Images */}
+      {/* Media: Video or Images Grid */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaWrap}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
-            height={210}
+            height={220}
             onFallbackOpen={handleOpenTweet}
           />
         </View>
       ) : mediaDetails.imageUrls.length > 0 ? (
-        <View style={styles.mediaWrap}>
-          <SafeImage
-            url={mediaDetails.imageUrls[0]}
-            style={styles.mediaImage}
-            resizeMode="cover"
+        <View style={styles.gridWrap}>
+          <TwitterImageGrid
+            images={mediaDetails.imageUrls}
+            height={mediaDetails.imageUrls.length === 1 ? 230 : 210}
+            onPressCard={handleOpenTweet}
           />
-          {mediaDetails.imageUrls.length > 1 && (
-            <View style={styles.carouselBadge}>
-              <Text style={styles.carouselBadgeText}>1/{mediaDetails.imageUrls.length}</Text>
-            </View>
-          )}
         </View>
       ) : mediaDetails.posterUrl ? (
         <View style={styles.mediaWrap}>
@@ -512,6 +508,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#EBE5DC',
     position: 'relative',
+  },
+  gridWrap: {
+    width: '100%',
+    marginBottom: 10,
   },
   mediaImage: {
     width: '100%',

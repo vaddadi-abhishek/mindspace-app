@@ -21,6 +21,7 @@ import {
 import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
+import { SlidableMedia } from '../ui/SlidableMedia';
 
 interface GenericCardProps {
   bookmark: Bookmark;
@@ -73,13 +74,27 @@ export const GenericCard: React.FC<GenericCardProps> = ({
         },
       ]}
     >
-      {/* Media: Video or Image */}
+      {/* Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaContainer}>
           <SafeVideo
             videoUrl={mediaDetails.videoUrl}
             posterUrl={mediaDetails.posterUrl}
             height={190}
+            onFallbackOpen={handleCardPress}
+          />
+          {bookmark.is_article && (
+            <View style={styles.articleBadge}>
+              <BookOpen size={11} color="#FFFFFF" />
+              <Text style={styles.articleBadgeText}>Article</Text>
+            </View>
+          )}
+        </View>
+      ) : mediaDetails.imageUrls.length > 1 ? (
+        <View style={styles.carouselContainer}>
+          <SlidableMedia
+            images={mediaDetails.imageUrls}
+            height={200}
             onFallbackOpen={handleCardPress}
           />
           {bookmark.is_article && (
@@ -255,9 +270,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   mediaContainer: {
-    height: 160,
+    height: 190,
     width: '100%',
     backgroundColor: '#EBE5DC',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  carouselContainer: {
+    width: '100%',
     position: 'relative',
   },
   mediaImage: {

@@ -25,6 +25,7 @@ import { FacebookBrandLogo, FacebookVerifiedBadge } from './SocialCardIcons';
 import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
+import { SlidableMedia } from '../ui/SlidableMedia';
 
 function isFacebookProfileUrl(url?: string | null): boolean {
   if (!url) return false;
@@ -324,7 +325,7 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
         {bookmark.description || bookmark.title}
       </Text>
 
-      {/* Media: Video or Images */}
+      {/* Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaWrap}>
           <SafeVideo
@@ -335,11 +336,12 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
           />
         </View>
       ) : mediaDetails.imageUrls.length > 0 ? (
-        <View style={styles.mediaWrap}>
-          <SafeImage
-            url={mediaDetails.imageUrls[0]}
-            style={styles.mediaImage}
-            resizeMode="cover"
+        <View style={styles.carouselWrap}>
+          <SlidableMedia
+            images={mediaDetails.imageUrls}
+            height={210}
+            onFallbackOpen={handleOpenPost}
+            dotActiveColor="#1877F2"
           />
         </View>
       ) : mediaDetails.posterUrl ? (
@@ -446,6 +448,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 10,
     backgroundColor: '#EBE5DC',
+  },
+  carouselWrap: {
+    width: '100%',
+    marginBottom: 10,
   },
   mediaImage: {
     width: '100%',

@@ -21,6 +21,7 @@ import {
 import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
+import { SlidableMedia } from '../ui/SlidableMedia';
 
 interface PinterestCardProps {
   bookmark: Bookmark;
@@ -69,6 +70,25 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             posterUrl={mediaDetails.posterUrl}
             height={220}
             onFallbackOpen={handleOpenPin}
+          />
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.floatingMenu}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      ) : mediaDetails.imageUrls.length > 1 ? (
+        <View style={styles.imageContainer}>
+          <SlidableMedia
+            images={mediaDetails.imageUrls}
+            height={240}
+            onFallbackOpen={handleOpenPin}
+            dotActiveColor="#E60023"
           />
           <TouchableOpacity
             onPress={(e) => {

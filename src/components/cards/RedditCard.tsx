@@ -24,6 +24,7 @@ import { RedditBrandLogo } from './SocialCardIcons';
 import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
+import { SlidableMedia } from '../ui/SlidableMedia';
 
 interface RedditCardProps {
   bookmark: Bookmark;
@@ -129,7 +130,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
         </Text>
       )}
 
-      {/* Media: Video or Images */}
+      {/* Media: Video, Carousel, or Single Image */}
       {mediaDetails.isVideo && (mediaDetails.videoUrl || mediaDetails.posterUrl) ? (
         <View style={styles.mediaWrap}>
           <SafeVideo
@@ -140,17 +141,13 @@ export const RedditCard: React.FC<RedditCardProps> = ({
           />
         </View>
       ) : mediaDetails.imageUrls.length > 0 ? (
-        <View style={styles.mediaWrap}>
-          <SafeImage
-            url={mediaDetails.imageUrls[0]}
-            style={styles.mediaImage}
-            resizeMode="cover"
+        <View style={styles.carouselWrap}>
+          <SlidableMedia
+            images={mediaDetails.imageUrls}
+            height={220}
+            onFallbackOpen={handleOpenPost}
+            dotActiveColor="#FF4500"
           />
-          {mediaDetails.imageUrls.length > 1 && (
-            <View style={styles.carouselBadge}>
-              <Text style={styles.carouselBadgeText}>1/{mediaDetails.imageUrls.length}</Text>
-            </View>
-          )}
         </View>
       ) : mediaDetails.posterUrl ? (
         <View style={styles.mediaWrap}>
@@ -277,12 +274,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mediaWrap: {
-    height: 170,
+    height: 220,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 10,
     backgroundColor: '#EBE5DC',
     position: 'relative',
+  },
+  carouselWrap: {
+    width: '100%',
+    marginBottom: 10,
   },
   mediaImage: {
     width: '100%',
