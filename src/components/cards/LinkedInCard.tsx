@@ -24,6 +24,7 @@ import { VideoPlayOverlay } from '../ui/VideoPlayOverlay';
 import { SafeImage } from '../ui/SafeImage';
 import { SafeVideo } from '../ui/SafeVideo';
 import { SlidableMedia } from '../ui/SlidableMedia';
+import { LinkedInBrandLogo } from './SocialCardIcons';
 
 interface LinkedInCardProps {
   bookmark: Bookmark;
@@ -114,16 +115,19 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onOpenMenu(bookmark);
-          }}
-          style={styles.menuBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <MoreVertical size={16} color={colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <LinkedInBrandLogo size={18} />
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.menuBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Post Text */}
@@ -275,6 +279,11 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 10.5,
     marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   menuBtn: {
     padding: 2,

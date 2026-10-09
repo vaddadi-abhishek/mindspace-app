@@ -309,16 +309,19 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onOpenMenu(bookmark);
-          }}
-          style={styles.menuBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <MoreVertical size={16} color={colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <FacebookBrandLogo size={18} />
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onOpenMenu(bookmark);
+            }}
+            style={styles.menuBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MoreVertical size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={[styles.postText, { color: colors.textHeading }]} numberOfLines={3}>
@@ -433,6 +436,11 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 11,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   menuBtn: {
     padding: 2,
