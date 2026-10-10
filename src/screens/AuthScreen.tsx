@@ -12,7 +12,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Eye, EyeOff, Mail, Lock, User as UserIcon, Sparkles, KeyRound } from 'lucide-react-native';
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User as UserIcon,
+  KeyRound,
+  Sun,
+  Moon,
+} from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { MindspaceLogo } from '../components/ui/MindspaceLogo';
@@ -24,7 +33,7 @@ import {
 } from '../services/api';
 
 export const AuthScreen: React.FC = () => {
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
   const { login, signup, setUser, setIsLoggedIn } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -35,6 +44,7 @@ export const AuthScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   // OTP Verification state
   const [showOtpVerification, setShowOtpVerification] = useState(false);
@@ -146,353 +156,594 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Logo & Header */}
-          <View style={styles.brandContainer}>
-            <View style={styles.logoBadge}>
-              <MindspaceLogo size={32} color="#000000" />
-            </View>
-            <Text style={[styles.brandTitle, { color: colors.textHeading }]}>
-              mindspace
-            </Text>
-            <Text style={[styles.brandSubtitle, { color: colors.textMuted }]}>
-              Your intelligent, distraction-free knowledge sanctuary
-            </Text>
-          </View>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {/* Background ambient gradient lighting for Sand Dune atmospheric depth */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ['rgba(200, 142, 62, 0.12)', 'transparent']
+            : ['rgba(181, 129, 76, 0.10)', 'transparent']
+        }
+        style={styles.ambientTopGlow}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={
+          isDark
+            ? ['transparent', 'rgba(200, 142, 62, 0.08)']
+            : ['transparent', 'rgba(181, 129, 76, 0.06)']
+        }
+        style={styles.ambientBottomGlow}
+        pointerEvents="none"
+      />
 
-          {/* Form Card */}
-          <View
+      <SafeAreaView
+        edges={['top', 'bottom', 'left', 'right']}
+        style={styles.safeArea}
+      >
+        {/* Floating Top Bar (Theme Toggler) */}
+        <View style={styles.topActionsBar}>
+          <TouchableOpacity
+            onPress={toggleTheme}
             style={[
-              styles.card,
+              styles.themeToggleBtn,
               {
-                backgroundColor: colors.card,
+                backgroundColor: isDark
+                  ? 'rgba(30, 25, 20, 0.85)'
+                  : 'rgba(255, 255, 255, 0.9)',
                 borderColor: colors.border,
                 shadowColor: colors.shadow,
               },
             ]}
+            activeOpacity={0.7}
+            accessibilityLabel="Toggle dark/light theme"
           >
-            {/* Mode Switcher */}
-            {!showOtpVerification && (
+            {isDark ? (
+              <Sun size={17} color={colors.primary} />
+            ) : (
+              <Moon size={17} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            {/* Top Brand Section — Symmetrically balances against bottomSection */}
+            <View style={styles.topSection}>
               <View
                 style={[
-                  styles.tabRow,
+                  styles.logoBadge,
                   {
-                    backgroundColor: isDark ? 'rgba(35, 30, 25, 0.7)' : 'rgba(240, 235, 228, 0.7)',
+                    backgroundColor: isDark ? colors.card : '#FFFFFF',
+                    borderColor: isDark ? colors.border : '#E8E3DA',
+                    shadowColor: colors.shadow,
                   },
                 ]}
               >
-                <TouchableOpacity
-                  onPress={() => {
-                    setMode('login');
-                    setError('');
-                    setSuccess('');
-                  }}
-                  style={[
-                    styles.tabBtn,
-                    mode === 'login' && [
-                      styles.tabBtnActive,
-                      { backgroundColor: colors.card, shadowColor: colors.shadow },
-                    ],
-                  ]}
-                >
-                  <Text
+                <MindspaceLogo
+                  size={30}
+                  color={isDark ? colors.primary : '#211D1A'}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.brandTitle,
+                  {
+                    color: colors.textHeading,
+                    fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
+                  },
+                ]}
+              >
+                mindspace
+              </Text>
+              <Text style={[styles.brandSubtitle, { color: colors.textMuted }]}>
+                Your intelligent bookmark assistant
+              </Text>
+            </View>
+
+            {/* Modal Card — Exactly Centered Vertically & Horizontally */}
+            <View style={styles.cardContainer}>
+              <View
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    shadowColor: colors.shadow,
+                  },
+                ]}
+              >
+                {/* Amber Gradient Top Bar */}
+                <LinearGradient
+                  colors={['#B5814C', '#D99F50', '#DEAC62']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.cardAccentBar}
+                />
+
+                {/* Mode Switcher Tabs */}
+                {!showOtpVerification && (
+                  <View
                     style={[
-                      styles.tabBtnText,
+                      styles.tabRow,
                       {
-                        color: mode === 'login' ? colors.textHeading : colors.textMuted,
-                        fontWeight: mode === 'login' ? '700' : '500',
+                        backgroundColor: isDark
+                          ? 'rgba(35, 30, 25, 0.75)'
+                          : 'rgba(240, 235, 228, 0.75)',
+                        borderColor: isDark
+                          ? 'rgba(50, 42, 34, 0.6)'
+                          : 'rgba(230, 224, 215, 0.8)',
                       },
                     ]}
                   >
-                    Sign In
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setMode('signup');
-                    setError('');
-                    setSuccess('');
-                  }}
-                  style={[
-                    styles.tabBtn,
-                    mode === 'signup' && [
-                      styles.tabBtnActive,
-                      { backgroundColor: colors.card, shadowColor: colors.shadow },
-                    ],
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.tabBtnText,
-                      {
-                        color: mode === 'signup' ? colors.textHeading : colors.textMuted,
-                        fontWeight: mode === 'signup' ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    Create Account
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Error & Success Messages */}
-            {Boolean(error) && (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            {Boolean(success) && (
-              <View style={styles.successBox}>
-                <Text style={styles.successText}>{success}</Text>
-              </View>
-            )}
-
-            {showOtpVerification ? (
-              /* OTP Form */
-              <View style={styles.form}>
-                <View style={styles.otpHeader}>
-                  <KeyRound size={24} color={colors.primary} />
-                  <Text style={[styles.otpTitle, { color: colors.textHeading }]}>
-                    Check your email
-                  </Text>
-                  <Text style={[styles.otpSubtitle, { color: colors.textMuted }]}>
-                    We sent a 6-digit confirmation code to {email}
-                  </Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.inputContainer,
-                    {
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <TextInput
-                    style={[styles.input, styles.otpInput, { color: colors.textHeading }]}
-                    placeholder="123456"
-                    placeholderTextColor={colors.textMuted}
-                    value={otpCode}
-                    onChangeText={setOtpCode}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    autoFocus
-                  />
-                </View>
-
-                <TouchableOpacity
-                  onPress={handleVerifyOtp}
-                  disabled={loading}
-                  style={[styles.submitBtn, { backgroundColor: colors.primary }]}
-                >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.submitBtnText}>Verify and Continue</Text>
-                  )}
-                </TouchableOpacity>
-
-                <View style={styles.otpFooter}>
-                  <TouchableOpacity
-                    onPress={handleResendOtp}
-                    disabled={resendCooldown > 0 || isResending}
-                  >
-                    <Text style={[styles.resendText, { color: colors.primary }]}>
-                      {resendCooldown > 0
-                        ? `Resend code in ${resendCooldown}s`
-                        : isResending
-                        ? 'Sending...'
-                        : 'Resend verification code'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowOtpVerification(false);
-                      setError('');
-                      setSuccess('');
-                    }}
-                  >
-                    <Text style={[styles.backToSignText, { color: colors.textMuted }]}>
-                      Back to sign in
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              /* Regular Auth Form */
-              <View style={styles.form}>
-                {mode === 'signup' && (
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: colors.textMuted }]}>Username</Text>
-                    <View
+                    <TouchableOpacity
+                      onPress={() => {
+                        setMode('login');
+                        setError('');
+                        setSuccess('');
+                      }}
+                      activeOpacity={0.8}
                       style={[
-                        styles.inputContainer,
-                        { backgroundColor: colors.inputBg, borderColor: colors.border },
+                        styles.tabBtn,
+                        mode === 'login' && [
+                          styles.tabBtnActive,
+                          {
+                            backgroundColor: colors.card,
+                            shadowColor: colors.shadow,
+                          },
+                        ],
                       ]}
                     >
-                      <UserIcon size={16} color={colors.textMuted} style={styles.inputIcon} />
-                      <TextInput
-                        style={[styles.input, { color: colors.textHeading }]}
-                        placeholder="yourname"
-                        placeholderTextColor={colors.textMuted}
-                        value={username}
-                        onChangeText={setUsername}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                      />
-                    </View>
+                      <Text
+                        style={[
+                          styles.tabBtnText,
+                          {
+                            color:
+                              mode === 'login'
+                                ? colors.textHeading
+                                : colors.textMuted,
+                            fontWeight: mode === 'login' ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        Sign In
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        setMode('signup');
+                        setError('');
+                        setSuccess('');
+                      }}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.tabBtn,
+                        mode === 'signup' && [
+                          styles.tabBtnActive,
+                          {
+                            backgroundColor: colors.card,
+                            shadowColor: colors.shadow,
+                          },
+                        ],
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.tabBtnText,
+                          {
+                            color:
+                              mode === 'signup'
+                                ? colors.textHeading
+                                : colors.textMuted,
+                            fontWeight: mode === 'signup' ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        Create Account
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 )}
 
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: colors.textMuted }]}>Email</Text>
-                  <View
-                    style={[
-                      styles.inputContainer,
-                      { backgroundColor: colors.inputBg, borderColor: colors.border },
-                    ]}
-                  >
-                    <Mail size={16} color={colors.textMuted} style={styles.inputIcon} />
-                    <TextInput
-                      style={[styles.input, { color: colors.textHeading }]}
-                      placeholder="you@example.com"
-                      placeholderTextColor={colors.textMuted}
-                      value={email}
-                      onChangeText={setEmail}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="email-address"
-                    />
+                {/* Subheading text inside the card */}
+                {!showOtpVerification && (
+                  <View style={styles.cardHeader}>
+                    <Text
+                      style={[
+                        styles.cardHeading,
+                        {
+                          color: colors.textHeading,
+                          fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
+                        },
+                      ]}
+                    >
+                      {mode === 'login' ? 'Welcome back' : 'Join mindspace'}
+                    </Text>
                   </View>
-                </View>
+                )}
 
-                <View style={styles.inputGroup}>
-                  <View style={styles.labelRow}>
-                    <Text style={[styles.label, { color: colors.textMuted }]}>Password</Text>
-                    {mode === 'login' && (
-                      <TouchableOpacity onPress={handleForgotPassword}>
-                        <Text style={[styles.forgotText, { color: colors.primary }]}>
-                          Forgot?
+                {/* Error & Success Messages */}
+                {Boolean(error) && (
+                  <View style={styles.errorBox}>
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                )}
+
+                {Boolean(success) && (
+                  <View style={styles.successBox}>
+                    <Text style={styles.successText}>{success}</Text>
+                  </View>
+                )}
+
+                {showOtpVerification ? (
+                  /* OTP Form */
+                  <View style={styles.form}>
+                    <View style={styles.otpHeader}>
+                      <View style={[styles.otpIconBadge, { backgroundColor: colors.accentBg }]}>
+                        <KeyRound size={22} color={colors.primary} />
+                      </View>
+                      <Text
+                        style={[
+                          styles.otpTitle,
+                          {
+                            color: colors.textHeading,
+                            fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
+                          },
+                        ]}
+                      >
+                        Check your email
+                      </Text>
+                      <Text style={[styles.otpSubtitle, { color: colors.textMuted }]}>
+                        We sent a 6-digit confirmation code to {email}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        {
+                          backgroundColor: colors.inputBg,
+                          borderColor:
+                            focusedInput === 'otp' ? colors.primary : colors.border,
+                        },
+                      ]}
+                    >
+                      <TextInput
+                        style={[styles.input, styles.otpInput, { color: colors.textHeading }]}
+                        placeholder="123456"
+                        placeholderTextColor={colors.textMuted}
+                        value={otpCode}
+                        onChangeText={setOtpCode}
+                        onFocus={() => setFocusedInput('otp')}
+                        onBlur={() => setFocusedInput(null)}
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        autoFocus
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={handleVerifyOtp}
+                      disabled={loading}
+                      activeOpacity={0.85}
+                      style={styles.submitBtnContainer}
+                    >
+                      <LinearGradient
+                        colors={
+                          isDark
+                            ? ['#C88E3E', '#A8722E']
+                            : ['#B5814C', '#996533']
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.submitBtnGradient}
+                      >
+                        {loading ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.submitBtnText}>Verify and Continue</Text>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <View style={styles.otpFooter}>
+                      <TouchableOpacity
+                        onPress={handleResendOtp}
+                        disabled={resendCooldown > 0 || isResending}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={[styles.resendText, { color: colors.primary }]}>
+                          {resendCooldown > 0
+                            ? `Resend code in ${resendCooldown}s`
+                            : isResending
+                              ? 'Sending...'
+                              : 'Resend verification code'}
                         </Text>
                       </TouchableOpacity>
-                    )}
+
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowOtpVerification(false);
+                          setError('');
+                          setSuccess('');
+                        }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text style={[styles.backToSignText, { color: colors.textMuted }]}>
+                          Back to sign in
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.inputContainer,
-                      { backgroundColor: colors.inputBg, borderColor: colors.border },
-                    ]}
-                  >
-                    <Lock size={16} color={colors.textMuted} style={styles.inputIcon} />
-                    <TextInput
-                      style={[styles.input, { color: colors.textHeading }]}
-                      placeholder="••••••••"
-                      placeholderTextColor={colors.textMuted}
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                    />
+                ) : (
+                  /* Regular Auth Form */
+                  <View style={styles.form}>
+                    {mode === 'signup' && (
+                      <View style={styles.inputGroup}>
+                        <Text style={[styles.label, { color: colors.textMuted }]}>Username</Text>
+                        <View
+                          style={[
+                            styles.inputContainer,
+                            {
+                              backgroundColor: colors.inputBg,
+                              borderColor:
+                                focusedInput === 'username'
+                                  ? colors.primary
+                                  : colors.border,
+                            },
+                          ]}
+                        >
+                          <UserIcon
+                            size={16}
+                            color={focusedInput === 'username' ? colors.primary : colors.textMuted}
+                            style={styles.inputIcon}
+                          />
+                          <TextInput
+                            style={[styles.input, { color: colors.textHeading }]}
+                            placeholder="yourname"
+                            placeholderTextColor={colors.textMuted}
+                            value={username}
+                            onChangeText={setUsername}
+                            onFocus={() => setFocusedInput('username')}
+                            onBlur={() => setFocusedInput(null)}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                        </View>
+                      </View>
+                    )}
+
+                    <View style={styles.inputGroup}>
+                      <Text style={[styles.label, { color: colors.textMuted }]}>Email</Text>
+                      <View
+                        style={[
+                          styles.inputContainer,
+                          {
+                            backgroundColor: colors.inputBg,
+                            borderColor:
+                              focusedInput === 'email'
+                                ? colors.primary
+                                : colors.border,
+                          },
+                        ]}
+                      >
+                        <Mail
+                          size={16}
+                          color={focusedInput === 'email' ? colors.primary : colors.textMuted}
+                          style={styles.inputIcon}
+                        />
+                        <TextInput
+                          style={[styles.input, { color: colors.textHeading }]}
+                          placeholder="you@example.com"
+                          placeholderTextColor={colors.textMuted}
+                          value={email}
+                          onChangeText={setEmail}
+                          onFocus={() => setFocusedInput('email')}
+                          onBlur={() => setFocusedInput(null)}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          keyboardType="email-address"
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                      <View style={styles.labelRow}>
+                        <Text style={[styles.label, { color: colors.textMuted }]}>Password</Text>
+                        {mode === 'login' && (
+                          <TouchableOpacity
+                            onPress={handleForgotPassword}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Text style={[styles.forgotText, { color: colors.primary }]}>
+                              Forgot?
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                      <View
+                        style={[
+                          styles.inputContainer,
+                          {
+                            backgroundColor: colors.inputBg,
+                            borderColor:
+                              focusedInput === 'password'
+                                ? colors.primary
+                                : colors.border,
+                          },
+                        ]}
+                      >
+                        <Lock
+                          size={16}
+                          color={focusedInput === 'password' ? colors.primary : colors.textMuted}
+                          style={styles.inputIcon}
+                        />
+                        <TextInput
+                          style={[styles.input, { color: colors.textHeading }]}
+                          placeholder="••••••••"
+                          placeholderTextColor={colors.textMuted}
+                          value={password}
+                          onChangeText={setPassword}
+                          onFocus={() => setFocusedInput('password')}
+                          onBlur={() => setFocusedInput(null)}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                        />
+                        <TouchableOpacity
+                          onPress={() => setShowPassword(!showPassword)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          {showPassword ? (
+                            <EyeOff size={16} color={colors.textMuted} />
+                          ) : (
+                            <Eye size={16} color={colors.textMuted} />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
                     <TouchableOpacity
-                      onPress={() => setShowPassword(!showPassword)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      onPress={handleSubmit}
+                      disabled={loading}
+                      activeOpacity={0.85}
+                      style={styles.submitBtnContainer}
                     >
-                      {showPassword ? (
-                        <EyeOff size={16} color={colors.textMuted} />
-                      ) : (
-                        <Eye size={16} color={colors.textMuted} />
-                      )}
+                      <LinearGradient
+                        colors={
+                          isDark
+                            ? ['#C88E3E', '#A8722E']
+                            : ['#B5814C', '#996533']
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.submitBtnGradient}
+                      >
+                        {loading ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={styles.submitBtnText}>
+                            {mode === 'login' ? 'Sign In to Mindspace' : 'Create Account'}
+                          </Text>
+                        )}
+                      </LinearGradient>
                     </TouchableOpacity>
                   </View>
-                </View>
-
-                <TouchableOpacity
-                  onPress={handleSubmit}
-                  disabled={loading}
-                  style={[styles.submitBtn, { backgroundColor: colors.primary }]}
-                >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.submitBtnText}>
-                      {mode === 'login' ? 'Sign In to Mindspace' : 'Create Account'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                )}
               </View>
-            )}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            </View>
+
+            {/* Bottom Footer Section — Matches topSection for EXACT centering */}
+            <View style={styles.bottomSection}>
+              <Text style={[styles.footerText, { color: colors.textMuted }]}>
+                Mindspace
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    position: 'relative',
+  },
   safeArea: {
     flex: 1,
+  },
+  ambientTopGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 240,
+  },
+  ambientBottomGlow: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+  },
+  topActionsBar: {
+    position: 'absolute',
+    top: 8,
+    right: 18,
+    zIndex: 10,
+  },
+  themeToggleBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 32,
+    paddingVertical: 8,
+  },
+  topSection: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  brandContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
+    paddingVertical: 8,
+    minHeight: 110,
   },
   logoBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 15,
-    backgroundColor: '#FFFFFF',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E8E3DA',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   brandTitle: {
-    fontSize: 26,
+    fontSize: 25,
     fontWeight: '800',
     letterSpacing: -0.5,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   brandSubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     textAlign: 'center',
-    maxWidth: 280,
+    maxWidth: 270,
+    lineHeight: 17,
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: 420,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   card: {
     width: '100%',
-    maxWidth: 420,
     borderRadius: 24,
     borderWidth: 1,
     padding: 22,
@@ -500,12 +751,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 6,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  cardAccentBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
   },
   tabRow: {
     flexDirection: 'row',
     borderRadius: 14,
+    borderWidth: 1,
     padding: 3,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   tabBtn: {
     flex: 1,
@@ -520,7 +781,22 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tabBtnText: {
-    fontSize: 13.5,
+    fontSize: 13,
+  },
+  cardHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardHeading: {
+    fontSize: 19,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 3,
+  },
+  cardSubheading: {
+    fontSize: 12,
+    textAlign: 'center',
+    maxWidth: 280,
   },
   errorBox: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -549,7 +825,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
-    gap: 16,
+    gap: 15,
   },
   inputGroup: {
     gap: 6,
@@ -560,7 +836,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   label: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -573,7 +849,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 1.2,
     paddingHorizontal: 12,
     height: 46,
   },
@@ -584,29 +860,46 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14.5,
   },
-  submitBtn: {
-    height: 48,
+  submitBtnContainer: {
     borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 4,
+    shadowColor: '#B5814C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  submitBtnGradient: {
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
   },
   submitBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
   otpHeader: {
     alignItems: 'center',
     gap: 8,
     marginBottom: 8,
   },
+  otpIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   otpTitle: {
     fontSize: 18,
     fontWeight: '700',
   },
   otpSubtitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     textAlign: 'center',
   },
   otpInput: {
@@ -614,7 +907,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     letterSpacing: 6,
-    fontFamily: 'Menlo',
+    fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
   },
   otpFooter: {
     alignItems: 'center',
@@ -627,5 +920,19 @@ const styles = StyleSheet.create({
   },
   backToSignText: {
     fontSize: 12.5,
+  },
+  bottomSection: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    minHeight: 110,
+  },
+  footerText: {
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    fontWeight: '500',
+    opacity: 0.7,
   },
 });
