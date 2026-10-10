@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Bell,
   Sparkles,
@@ -15,6 +16,7 @@ import {
   Share2,
   Trash2,
   CheckCheck,
+  X,
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -32,64 +34,74 @@ interface NotificationsScreenProps {
   onNavigateHome?: () => void;
 }
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif_1',
-    title: 'AI Context Generated',
-    message: 'Visual entities and smart tags are ready for your recently saved bookmark.',
-    timestamp: '10m ago',
-    read: false,
-    type: 'ai',
-  },
-  {
-    id: 'notif_2',
-    title: 'Weekly Credits Reset',
-    message: 'Your free AI credits have been refreshed. Enjoy exploring your mindspace!',
-    timestamp: '2h ago',
-    read: false,
-    type: 'credit',
-  },
-  {
-    id: 'notif_3',
-    title: 'Share Extension Ready',
-    message: 'Share links directly from Safari, Chrome, and X to Mindspace using the system share sheet.',
-    timestamp: '1d ago',
-    read: true,
-    type: 'share',
-  },
-  {
-    id: 'notif_4',
-    title: 'Welcome to Mindspace',
-    message: 'Organize your mind, save articles, and extract intelligence effortlessly.',
-    timestamp: '3d ago',
-    read: true,
-    type: 'welcome',
-  },
-];
+const NOTIFICATIONS_STORAGE_KEY = 'mindspace_user_notifications_v1';
 
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   onShowToast,
   onNavigateHome,
 }) => {
   const { colors, isDark } = useTheme();
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load persisted notifications from AsyncStorage on mount
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        if (stored !== null) {
+          const parsed = JSON.parse(stored);
+          setNotifications(Array.isArray(parsed) ? parsed : []);
+        } else {
+          // Initialize with empty list so fake notifications are never forced on reload
+          setNotifications([]);
+          await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify([]));
+        }
+      } catch (err) {
+        console.warn('Failed to load notifications from storage:', err);
+      } finally {
+        setLoaded(true);
+      }
+    };
+    loadNotifications();
+  }, []);
+
+  const persistNotifications = useCallback(async (items: NotificationItem[]) => {
+    try {
+      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(items));
+    } catch (err) {
+      console.warn('Failed to save notifications to storage:', err);
+    }
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setNotifications(updated);
+    persistNotifications(updated);
     onShowToast?.('All notifications marked as read', 'success');
   };
 
   const handleClearAll = () => {
     setNotifications([]);
+    persistNotifications([]);
     onShowToast?.('Notifications cleared');
   };
 
+  const handleDeleteItem = (id: string) => {
+    const updated = notifications.filter((n) => n.id !== id);
+    setNotifications(updated);
+    persistNotifications(updated);
+    onShowToast?.('Notification removed');
+  };
+
   const handleToggleRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
+    const updated = notifications.map((n) =>
+      n.id === id ? { ...n, read: !n.read } : n
     );
+    setNotifications(updated);
+    persistNotifications(updated);
   };
 
   const renderIcon = (type: NotificationItem['type']) => {
@@ -218,9 +230,19 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                 >
                   {item.title}
                 </Text>
-                <Text style={[styles.notifTime, { color: colors.textMuted }]}>
-                  {item.timestamp}
-                </Text>
+                <View style={styles.rightActionWrap}>
+                  <Text style={[styles.notifTime, { color: colors.textMuted }]}>
+                    {item.timestamp}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteItem(item.id)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.deleteItemBtn}
+                    accessibilityLabel={`Delete notification ${item.title}`}
+                  >
+                    <X size={14} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <Text
@@ -361,6 +383,15 @@ const styles = StyleSheet.create({
   notifTitle: {
     fontSize: 14,
     letterSpacing: -0.1,
+    flex: 1,
+  },
+  rightActionWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteItemBtn: {
+    padding: 2,
   },
   notifTime: {
     fontSize: 11,
