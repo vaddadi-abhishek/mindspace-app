@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -39,6 +39,16 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
   const { colors, isDark } = useTheme();
   const [url, setUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (visible && !url) {
+      Clipboard.getStringAsync().then((text) => {
+        if (text && /^https?:\/\//i.test(text.trim())) {
+          setUrl(text.trim());
+        }
+      }).catch(() => {});
+    }
+  }, [visible]);
 
   const isPro = planInfo?.is_paid || planInfo?.plan === 'pro';
   const creditsRemaining = planInfo?.credits_remaining ?? 0;

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   AppState,
+  Linking,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bookmark as BookmarkIcon, Plus } from 'lucide-react-native';
@@ -106,6 +107,11 @@ export const DashboardScreen: React.FC = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [selectedMediaForViewer, setSelectedMediaForViewer] = useState<{ bookmark: Bookmark; initialIndex?: number } | null>(null);
 
+  // In-flight and deduplication refs to prevent multiple saves and infinite loops
+  const inFlightSavesRef = useRef<Set<string>>(new Set());
+  const processedShareUrlsRef = useRef<Set<string>>(new Set());
+  const initialUrlHandledRef = useRef<boolean>(false);
+
   // Floating Nav Bar active tab (home, notifications, profile)
   const [activeTab, setActiveTab] = useState<FloatingNavTab>('home');
 
@@ -146,57 +152,8 @@ export const DashboardScreen: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Add Bookmark Handler
-  const handleAddBookmark = async (newBookmark: Bookmark) => {
-    // 1. Client-Side Duplicate Check
-    const existing = findDuplicateBookmark(bookmarks, newBookmark.url);
-    if (existing) {
-      triggerAlreadyExistsBadge();
-      return;
-    }
-
-    const tempId = `temp_${Date.now()}`;
-    const optimisticBookmark: Bookmark = {
-      id: tempId,
-      url: newBookmark.url,
-      title: newBookmark.url,
-      description: 'Extracting metadata...',
-      site_name: '',
-      logo: null,
-      isFetchingMetadata: true,
-      created_at: new Date().toISOString(),
-    };
-
-    setBookmarks((prev) => [optimisticBookmark, ...prev]);
-
-    try {
-      const savedBookmark = await createBookmark(newBookmark.url, autoAiContext);
-
-      if (savedBookmark.already_exists) {
-        setBookmarks((prev) => prev.filter((b) => b.id !== tempId));
-        triggerAlreadyExistsBadge();
-        return;
-      }
-
-      setBookmarks((prev) => {
-        const withoutOld = prev.filter((b) => b.id !== savedBookmark.id && b.id !== tempId);
-        return [{ ...savedBookmark, isFetchingMetadata: false }, ...withoutOld];
-      });
-
-      addToast('Bookmark saved successfully!', 'success');
-
-      if (autoAiContext) {
-        handleGenerateAi(savedBookmark);
-      }
-    } catch (err: unknown) {
-      setBookmarks((prev) => prev.filter((b) => b.id !== tempId));
-      const message = err instanceof Error ? err.message : 'Failed to save bookmark';
-      addToast(`Error adding bookmark: ${message}`, 'error');
-    }
-  };
-
   // Generate AI Context Handler
-  const handleGenerateAi = async (bm: Bookmark) => {
+  const handleGenerateAi = useCallback(async (bm: Bookmark) => {
     // If user already has 0 credits on a free plan, show floating pill immediately
     if (planInfo && !planInfo.is_paid && planInfo.credits_remaining <= 0) {
       setBookmarks((prev) =>
@@ -213,7 +170,6 @@ export const DashboardScreen: React.FC = () => {
         prev.map((b) => (b.id === bm.id ? { ...b, ...updated } : b))
       );
       addToast('✨ AI Context generated successfully!', 'success');
-      // Refresh plan info to update remaining tokens
       getUserPlan().then(setPlanInfo).catch(() => {});
     } catch (err: unknown) {
       if (
@@ -241,15 +197,87 @@ export const DashboardScreen: React.FC = () => {
         return next;
       });
     }
-  };
+  }, [planInfo, addToast, triggerNoCreditsBadge]);
 
-  // Delete Bookmark Handler
-  const handleDeleteConfirm = async () => {
-    if (!deleteTargetId) return;
+  // Add Bookmark Handler with strict in-flight locking and deduplication
+  const handleAddBookmark = useCallback(async (newBookmark: Bookmark) => {
+    const rawUrl = newBookmark.url.trim();
+    if (!rawUrl) return;
+
+    const canonicalKey = rawUrl.toLowerCase().replace(/\/$/, '');
+    if (inFlightSavesRef.current.has(canonicalKey)) {
+      console.log('[DashboardScreen] In-flight save already active for:', canonicalKey);
+      return;
+    }
+    inFlightSavesRef.current.add(canonicalKey);
+
+    const tempId = `temp_${Date.now()}`;
+    const optimisticBookmark: Bookmark = {
+      id: tempId,
+      url: rawUrl,
+      title: newBookmark.title || rawUrl,
+      description: 'Extracting metadata...',
+      site_name: '',
+      logo: null,
+      isFetchingMetadata: true,
+      created_at: new Date().toISOString(),
+    };
+
+    setBookmarks((prev) => {
+      const existing = findDuplicateBookmark(prev, rawUrl);
+      if (existing) {
+        triggerAlreadyExistsBadge();
+        inFlightSavesRef.current.delete(canonicalKey);
+        return prev;
+      }
+      return [optimisticBookmark, ...prev];
+    });
+
     try {
-      await deleteBookmark(deleteTargetId);
-      setBookmarks((prev) => prev.filter((b) => b.id !== deleteTargetId));
-      if (selectedMediaForViewer?.bookmark.id === deleteTargetId) {
+      const savedBookmark = await createBookmark(rawUrl, autoAiContext);
+
+      if (savedBookmark.already_exists) {
+        setBookmarks((prev) => prev.filter((b) => b.id !== tempId));
+        triggerAlreadyExistsBadge();
+        return;
+      }
+
+      setBookmarks((prev) => {
+        const withoutOld = prev.filter((b) => b.id !== savedBookmark.id && b.id !== tempId);
+        return [{ ...savedBookmark, isFetchingMetadata: false }, ...withoutOld];
+      });
+
+      addToast('Bookmark saved successfully!', 'success');
+
+      if (autoAiContext) {
+        handleGenerateAi(savedBookmark);
+      }
+    } catch (err: unknown) {
+      setBookmarks((prev) => prev.filter((b) => b.id !== tempId));
+      const message = err instanceof Error ? err.message : 'Failed to save bookmark';
+      addToast(`Error adding bookmark: ${message}`, 'error');
+    } finally {
+      setTimeout(() => inFlightSavesRef.current.delete(canonicalKey), 2500);
+    }
+  }, [autoAiContext, addToast, triggerAlreadyExistsBadge, handleGenerateAi]);
+
+  // Stable ref for handleAddBookmark to guarantee listeners never trigger re-render loops
+  const handleAddBookmarkRef = useRef(handleAddBookmark);
+  useEffect(() => {
+    handleAddBookmarkRef.current = handleAddBookmark;
+  }, [handleAddBookmark]);
+
+  // Delete Bookmark Handler - immediately dismisses modal to prevent layout flickering
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTargetId) return;
+    const targetId = deleteTargetId;
+    setDeleteTargetId(null);
+    try {
+      if (!targetId.startsWith('temp_') && !targetId.startsWith('bm_')) {
+        await deleteBookmark(targetId);
+      }
+      setBookmarks((prev) => prev.filter((b) => b.id !== targetId));
+      if (selectedMediaForViewer?.bookmark.id === targetId) {
         setSelectedMediaForViewer(null);
       }
       addToast('Bookmark deleted', 'success');
@@ -257,7 +285,7 @@ export const DashboardScreen: React.FC = () => {
       const message = err instanceof Error ? err.message : 'Failed to delete';
       addToast(`Error: ${message}`, 'error');
     }
-  };
+  }, [deleteTargetId, selectedMediaForViewer, addToast]);
 
   // Check if running inside Expo Go sandbox (native share extension requires standalone/dev build)
   const isExpoGo =
@@ -277,23 +305,27 @@ export const DashboardScreen: React.FC = () => {
       extractUrlFromText(shareIntent.text) ||
       (shareIntent.text && /^https?:\/\//i.test(shareIntent.text.trim()) ? shareIntent.text.trim() : null);
 
+    resetShareIntent();
+
     if (rawCandidate) {
       const trimmed = rawCandidate.trim();
       let targetUrl: string;
       try {
         targetUrl = validateAndFormatUrl(trimmed);
       } catch {
-        resetShareIntent();
         return;
       }
+
+      const canonical = targetUrl.toLowerCase().replace(/\/$/, '');
+      if (processedShareUrlsRef.current.has(canonical)) return;
+      processedShareUrlsRef.current.add(canonical);
+      setTimeout(() => processedShareUrlsRef.current.delete(canonical), 10000);
 
       let sourceName = 'Shared Link';
       try {
         const parsed = new URL(targetUrl);
         sourceName = parsed.hostname.replace(/^www\./, '');
-      } catch {
-        // fallback
-      }
+      } catch {}
 
       const incomingBookmark: Bookmark = {
         id: `bm_${Date.now()}`,
@@ -306,11 +338,9 @@ export const DashboardScreen: React.FC = () => {
         isFetchingMetadata: true,
       };
 
-      handleAddBookmark(incomingBookmark);
-      addToast(`Saving shared link from ${sourceName}...`, 'success');
-      resetShareIntent();
+      handleAddBookmarkRef.current(incomingBookmark);
     }
-  }, [hasShareIntent, shareIntent, addToast, resetShareIntent]);
+  }, [hasShareIntent, shareIntent, resetShareIntent]);
 
   // Sync any bookmarks saved by the Share Extension while app was closed or in background
   useEffect(() => {
@@ -331,6 +361,54 @@ export const DashboardScreen: React.FC = () => {
     });
     return () => sub.remove();
   }, [loadData, addToast]);
+
+  // Listen for direct deep links (e.g. mindspace://share?url=https://...)
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      try {
+        if (!event.url || !event.url.includes('url=')) return;
+        const raw = event.url.split('url=')[1]?.split('&')[0];
+        if (!raw) return;
+        const sharedUrl = decodeURIComponent(raw);
+        const targetUrl = validateAndFormatUrl(sharedUrl);
+
+        const canonical = targetUrl.toLowerCase().replace(/\/$/, '');
+        if (processedShareUrlsRef.current.has(canonical)) return;
+        processedShareUrlsRef.current.add(canonical);
+        setTimeout(() => processedShareUrlsRef.current.delete(canonical), 10000);
+
+        let sourceName = 'Shared Link';
+        try {
+          sourceName = new URL(targetUrl).hostname.replace(/^www\./, '');
+        } catch {}
+
+        const incomingBookmark: Bookmark = {
+          id: `bm_${Date.now()}`,
+          url: targetUrl,
+          title: sourceName,
+          description: '',
+          logo: null,
+          site_name: sourceName,
+          created_at: new Date().toISOString(),
+          isFetchingMetadata: true,
+        };
+
+        handleAddBookmarkRef.current(incomingBookmark);
+      } catch (err) {
+        console.warn('[DeepLink] Failed to parse incoming link:', err);
+      }
+    };
+
+    if (!initialUrlHandledRef.current) {
+      initialUrlHandledRef.current = true;
+      Linking.getInitialURL().then((initialUrl) => {
+        if (initialUrl) handleDeepLink({ url: initialUrl });
+      }).catch(() => {});
+    }
+
+    const sub = Linking.addEventListener('url', handleDeepLink);
+    return () => sub.remove();
+  }, []);
 
 
 

@@ -10,7 +10,7 @@
     "backgroundColor": "#FAF8F5",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mindspace.app",
+      "bundleIdentifier": "com.vaddadi.mindspace",
       "infoPlist": {
         "UIApplicationSceneManifest": {
           "UIApplicationSupportsMultipleScenes": false,
