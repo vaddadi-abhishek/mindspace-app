@@ -12,85 +12,161 @@ import type {
 
 export const AUTH_TOKEN_KEY = 'mindspace_auth_token';
 export const AUTH_REFRESH_TOKEN_KEY = 'mindspace_refresh_token';
+export const AUTH_USER_KEY = 'mindspace_user';
 
 let cachedMemoryToken: string | null = null;
+let cachedMemoryRefreshToken: string | null = null;
+let cachedMemoryUser: AuthUser | null = null;
 
 export function getCachedAuthToken(): string | null {
   return cachedMemoryToken;
 }
 
 /**
- * Reads token from hardware-backed SecureStore, with a transparent one-time
- * migration from legacy AsyncStorage for existing logged-in sessions.
+ * Reads token from hardware-backed SecureStore with seamless fallback to persistent
+ * AsyncStorage. Keeps in-memory cache warm for immediate synchronous access.
  */
 export async function getSecureAuthToken(): Promise<string | null> {
+  if (cachedMemoryToken) {
+    return cachedMemoryToken;
+  }
   try {
     let token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
     if (!token) {
       token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
-        await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
-        await AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {});
+        await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token).catch(() => {});
       }
     }
     cachedMemoryToken = token;
     return token;
   } catch (err) {
-    console.warn('[SecureStore] Failed to read auth token:', err);
-    return null;
+    console.warn('[SecureStore] Failed to read auth token, checking AsyncStorage:', err);
+    try {
+      const fallback = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      cachedMemoryToken = fallback;
+      return fallback;
+    } catch {
+      return null;
+    }
   }
 }
 
 // Warm in-memory cache eagerly
 getSecureAuthToken().catch(() => {});
 
+/**
+ * Dual-persistence: writes token to hardware SecureStore AND persistent AsyncStorage
+ * so the session survives keychain locks, app restarts, reboots, and updates.
+ */
 export async function setSecureAuthToken(token: string): Promise<void> {
+  cachedMemoryToken = token;
   try {
-    cachedMemoryToken = token;
-    await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {});
+    await Promise.all([
+      SecureStore.setItemAsync(AUTH_TOKEN_KEY, token).catch((e) => {
+        console.warn('[SecureStore] Failed to save auth token:', e);
+      }),
+      AsyncStorage.setItem(AUTH_TOKEN_KEY, token),
+    ]);
   } catch (err) {
-    console.warn('[SecureStore] Failed to save auth token:', err);
+    console.warn('[Storage] Failed to save auth token:', err);
   }
 }
 
 export async function getSecureRefreshToken(): Promise<string | null> {
+  if (cachedMemoryRefreshToken) {
+    return cachedMemoryRefreshToken;
+  }
   try {
     let refreshToken = await SecureStore.getItemAsync(AUTH_REFRESH_TOKEN_KEY);
     if (!refreshToken) {
       refreshToken = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
       if (refreshToken) {
-        await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, refreshToken);
-        await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY).catch(() => {});
+        await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, refreshToken).catch(() => {});
       }
     }
+    cachedMemoryRefreshToken = refreshToken;
     return refreshToken;
   } catch (err) {
-    console.warn('[SecureStore] Failed to read refresh token:', err);
+    console.warn('[SecureStore] Failed to read refresh token, checking AsyncStorage:', err);
+    try {
+      const fallback = await AsyncStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+      cachedMemoryRefreshToken = fallback;
+      return fallback;
+    } catch {
+      return null;
+    }
+  }
+}
+
+// Warm refresh token cache eagerly
+getSecureRefreshToken().catch(() => {});
+
+export async function setSecureRefreshToken(refreshToken: string): Promise<void> {
+  cachedMemoryRefreshToken = refreshToken;
+  try {
+    await Promise.all([
+      SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, refreshToken).catch((e) => {
+        console.warn('[SecureStore] Failed to save refresh token:', e);
+      }),
+      AsyncStorage.setItem(AUTH_REFRESH_TOKEN_KEY, refreshToken),
+    ]);
+  } catch (err) {
+    console.warn('[Storage] Failed to save refresh token:', err);
+  }
+}
+
+/**
+ * Retrieves the cached user info from memory or AsyncStorage to avoid cold-start blocking.
+ */
+export async function getCachedUser(): Promise<AuthUser | null> {
+  if (cachedMemoryUser) {
+    return cachedMemoryUser;
+  }
+  try {
+    const raw = await AsyncStorage.getItem(AUTH_USER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.email === 'string') {
+      cachedMemoryUser = parsed as AuthUser;
+      return cachedMemoryUser;
+    }
+    return null;
+  } catch {
     return null;
   }
 }
 
-export async function setSecureRefreshToken(refreshToken: string): Promise<void> {
+// Warm cached user eagerly
+getCachedUser().catch(() => {});
+
+export async function setCachedUser(user: AuthUser | null): Promise<void> {
+  cachedMemoryUser = user;
   try {
-    await SecureStore.setItemAsync(AUTH_REFRESH_TOKEN_KEY, refreshToken);
-    await AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY).catch(() => {});
+    if (user) {
+      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem(AUTH_USER_KEY);
+    }
   } catch (err) {
-    console.warn('[SecureStore] Failed to save refresh token:', err);
+    console.warn('[Storage] Failed to save cached user:', err);
   }
 }
 
 export async function removeSecureTokens(): Promise<void> {
   cachedMemoryToken = null;
+  cachedMemoryRefreshToken = null;
+  cachedMemoryUser = null;
   try {
     await Promise.all([
       SecureStore.deleteItemAsync(AUTH_TOKEN_KEY).catch(() => {}),
       SecureStore.deleteItemAsync(AUTH_REFRESH_TOKEN_KEY).catch(() => {}),
       AsyncStorage.removeItem(AUTH_TOKEN_KEY).catch(() => {}),
       AsyncStorage.removeItem(AUTH_REFRESH_TOKEN_KEY).catch(() => {}),
+      AsyncStorage.removeItem(AUTH_USER_KEY).catch(() => {}),
     ]);
   } catch (err) {
-    console.warn('[SecureStore] Failed to remove tokens:', err);
+    console.warn('[Storage] Failed to remove tokens:', err);
   }
 }
 
@@ -151,6 +227,8 @@ function base64UrlDecode(str: string): string {
 
 /**
  * Decodes the JWT access token and checks if it is expired or expiring within `bufferSeconds`.
+ * Uses multiple fallback strategies (atob, pure JS, regex) to ensure character encoding
+ * quirks never cause a valid token to be falsely reported as expired.
  */
 export function isTokenExpired(
   token: string | null | undefined,
@@ -160,18 +238,51 @@ export function isTokenExpired(
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return true;
-    const jsonPayload = base64UrlDecode(parts[1]);
-    const payload = JSON.parse(jsonPayload) as { exp?: number };
-    if (typeof payload.exp !== 'number') return false;
+
+    const base64Url = parts[1];
+    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+
+    let jsonPayload = '';
+    if (typeof atob === 'function') {
+      try {
+        jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+      } catch {
+        jsonPayload = atob(base64);
+      }
+    } else {
+      jsonPayload = base64UrlDecode(parts[1]);
+    }
+
+    let exp: number | undefined;
+    try {
+      const payload = JSON.parse(jsonPayload) as { exp?: number };
+      exp = payload.exp;
+    } catch {
+      // Regex fallback if JSON.parse fails due to character encoding
+      const expMatch = jsonPayload.match(/"exp"\s*:\s*(\d+)/);
+      if (expMatch && expMatch[1]) {
+        exp = parseInt(expMatch[1], 10);
+      }
+    }
+
+    if (typeof exp !== 'number' || isNaN(exp)) return false;
     const nowInSeconds = Math.floor(Date.now() / 1000);
-    return payload.exp <= nowInSeconds + bufferSeconds;
+    return exp <= nowInSeconds + bufferSeconds;
   } catch {
     return true;
   }
 }
 
 /**
- * Returns authentication headers containing Bearer token from SecureStore.
+ * Returns authentication headers containing Bearer token from SecureStore/AsyncStorage.
  */
 async function getAuthHeaders(customHeaders?: Record<string, string>): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
@@ -242,7 +353,6 @@ export function attemptTokenRefresh(): Promise<boolean> {
     try {
       const refreshToken = await getSecureRefreshToken();
       if (!refreshToken) {
-        await removeSecureTokens();
         return false;
       }
 
@@ -254,20 +364,38 @@ export function attemptTokenRefresh(): Promise<boolean> {
       });
 
       if (!response.ok) {
-        await removeSecureTokens();
+        // ONLY clear credentials if server explicitly rejected the refresh token as invalid/expired (401 or 400).
+        // Temporary server errors (500, 502, 503, 504, 429) must NOT log the user out!
+        if (response.status === 401 || response.status === 400) {
+          console.warn('[Auth] Refresh token rejected by server, clearing session');
+          await removeSecureTokens();
+        }
         return false;
       }
 
-      const data = (await response.json()) as { token?: string; refreshToken?: string };
+      const data = (await response.json()) as {
+        token?: string;
+        refreshToken?: string;
+        user?: AuthUser;
+      };
+
       if (data.token) {
         await setSecureAuthToken(data.token);
         if (data.refreshToken) {
           await setSecureRefreshToken(data.refreshToken);
         }
+        if (data.user) {
+          await setCachedUser(data.user);
+        }
+        getActiveApiBaseUrl().then((apiUrl) => {
+          syncCredentialsToAppGroup(data.token!, apiUrl, true);
+        }).catch(() => {});
         return true;
       }
       return false;
-    } catch {
+    } catch (err) {
+      // Network error or backend waking up: keep session intact and retry later
+      console.warn('[Auth] Network error during token refresh:', err);
       return false;
     } finally {
       refreshPromise = null;
@@ -298,11 +426,11 @@ async function request<T>(
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const shouldBypassAuthRefresh = AUTH_NO_RETRY_PATHS.includes(normalizedPath);
 
-  // Proactive refresh if access token is expired or close to expiring
+  // Proactive refresh if access token is missing or expired, but refresh token exists
   if (!shouldBypassAuthRefresh) {
     const currentToken = await getSecureAuthToken();
     const refreshToken = await getSecureRefreshToken();
-    if (currentToken && refreshToken && isTokenExpired(currentToken, 60)) {
+    if ((!currentToken || isTokenExpired(currentToken, 60)) && refreshToken) {
       await attemptTokenRefresh();
     }
   }
@@ -375,6 +503,9 @@ export async function loginUser(email: string, password: string): Promise<AuthUs
   if (data.refreshToken) {
     await setSecureRefreshToken(data.refreshToken);
   }
+  if (data.user) {
+    await setCachedUser(data.user);
+  }
   return data.user;
 }
 
@@ -406,6 +537,9 @@ export async function signUpUser(
   if (data.refreshToken) {
     await setSecureRefreshToken(data.refreshToken);
   }
+  if (data.user) {
+    await setCachedUser(data.user);
+  }
   return data;
 }
 
@@ -430,6 +564,9 @@ export async function verifyOtpUser(
   if (data.refreshToken) {
     await setSecureRefreshToken(data.refreshToken);
   }
+  if (data.user) {
+    await setCachedUser(data.user);
+  }
   return data;
 }
 
@@ -453,28 +590,58 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = await getSecureAuthToken();
   const refreshToken = await getSecureRefreshToken();
+  const cachedUser = await getCachedUser();
 
-  if (!token && !refreshToken) return null;
+  // If there are no credentials stored at all, user is not logged in
+  if (!token && !refreshToken) {
+    if (cachedUser) await setCachedUser(null);
+    return null;
+  }
 
+  // If access token is missing or expired, attempt refresh before requesting /auth/me
   if ((!token || isTokenExpired(token, 60)) && refreshToken) {
     const refreshed = await attemptTokenRefresh();
     if (!refreshed) {
-      await removeSecureTokens();
-      return null;
+      const remainingRefreshToken = await getSecureRefreshToken();
+      if (!remainingRefreshToken) {
+        // Refresh token was definitively rejected and cleared by server (401)
+        await setCachedUser(null);
+        return null;
+      }
+      // If refresh failed due to offline/network issue or Render cold-start, return cached user
+      if (cachedUser) {
+        return cachedUser;
+      }
     }
   }
 
   try {
     const data = await request<{ user: AuthUser }>('/auth/me', { method: 'GET' });
-    const currentToken = await getSecureAuthToken();
-    if (currentToken) {
-      getActiveApiBaseUrl().then((apiUrl) => {
-        syncCredentialsToAppGroup(currentToken, apiUrl, true);
-      }).catch(() => {});
+    if (data?.user) {
+      await setCachedUser(data.user);
+      const currentToken = await getSecureAuthToken();
+      if (currentToken) {
+        getActiveApiBaseUrl().then((apiUrl) => {
+          syncCredentialsToAppGroup(currentToken, apiUrl, true);
+        }).catch(() => {});
+      }
+      return data.user;
     }
-    return data.user;
-  } catch {
-    await removeSecureTokens();
+    return cachedUser;
+  } catch (err: unknown) {
+    // If request failed due to offline/network issue, return cached user
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    // Only clear credentials if backend explicitly said unauthorized (401)
+    const errorMessage = err instanceof Error ? err.message : '';
+    if (errorMessage.includes('401') || errorMessage.toLowerCase().includes('unauthorized')) {
+      await removeSecureTokens();
+      return null;
+    }
+
+    // Otherwise, keep session intact without logging user out
     return null;
   }
 }
