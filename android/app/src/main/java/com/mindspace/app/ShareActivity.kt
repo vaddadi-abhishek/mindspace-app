@@ -49,7 +49,7 @@ class ShareActivity : Activity() {
         private const val KEY_AUTH_TOKEN = "mindspace_auth_token"
         private const val KEY_API_URL = "mindspace_api_url"
         private const val KEY_AUTO_AI = "mindspace_auto_ai"
-        private const val DEFAULT_API_URL = "https://mindspace-link-web-scrapper.onrender.com/api/v1"
+        private const val DEFAULT_API_URL = "https://link-web-scrapper.onrender.com/api/v1"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

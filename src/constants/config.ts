@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const CUSTOM_API_URL_KEY = 'mindspace_custom_api_url';
 
-export const DEFAULT_PRODUCTION_API_URL = 'https://mindspace-link-web-scrapper.onrender.com/api/v1';
+export const DEFAULT_PRODUCTION_API_URL = 'https://link-web-scrapper.onrender.com/api/v1';
 export const DEFAULT_LOCAL_API_URL =
   Platform.OS === 'android' ? 'http://10.0.2.2:3000/api/v1' : 'http://localhost:3000/api/v1';
 
