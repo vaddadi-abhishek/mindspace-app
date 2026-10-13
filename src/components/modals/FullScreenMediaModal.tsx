@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StyleSheet,
   Dimensions,
   ScrollView,
@@ -13,7 +14,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X, MoreVertical, ExternalLink, Play } from 'lucide-react-native';
+import { X, MoreVertical, ExternalLink, Play, Download, Copy } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { SafeImage } from '../ui/SafeImage';
 import {
@@ -39,7 +41,7 @@ export interface FullScreenMediaModalProps {
   bookmark: Bookmark | null;
   initialIndex?: number;
   onClose: () => void;
-  onOpenMenu: (bookmark: Bookmark) => void;
+  onOpenMenu?: (bookmark: Bookmark) => void;
 }
 
 interface MediaItem {
@@ -116,6 +118,7 @@ export const FullScreenMediaModal: React.FC<FullScreenMediaModalProps> = ({
   const [screenHeight, setScreenHeight] = useState(screenDimensions.height);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -132,6 +135,7 @@ export const FullScreenMediaModal: React.FC<FullScreenMediaModalProps> = ({
     if (visible) {
       setActiveIndex(initialIndex);
       setIsExpanded(false);
+      setIsMenuOpen(false);
       setTimeout(() => {
         if (initialIndex > 0 && scrollRef.current) {
           scrollRef.current.scrollTo({
@@ -140,6 +144,8 @@ export const FullScreenMediaModal: React.FC<FullScreenMediaModalProps> = ({
           });
         }
       }, 50);
+    } else {
+      setIsMenuOpen(false);
     }
   }, [visible, initialIndex, screenWidth]);
 
@@ -192,6 +198,27 @@ export const FullScreenMediaModal: React.FC<FullScreenMediaModalProps> = ({
     if (newIdx >= 0 && newIdx < mediaItems.length && newIdx !== activeIndex) {
       setActiveIndex(newIdx);
     }
+  };
+
+  const currentItem = mediaItems[activeIndex] || mediaItems[0];
+  const isCurrentVideo = currentItem?.type === 'video';
+
+  const handleDownload = async () => {
+    if (!currentItem?.url) return;
+    try {
+      await Linking.openURL(currentItem.url);
+    } catch (err) {
+      console.error('Failed to open media URL for download:', err);
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleCopyMediaLink = async () => {
+    if (!currentItem?.url) return;
+    try {
+      await Clipboard.setStringAsync(currentItem.url);
+    } catch {}
+    setIsMenuOpen(false);
   };
 
   const renderPlatformLogo = () => {
@@ -296,13 +323,60 @@ export const FullScreenMediaModal: React.FC<FullScreenMediaModalProps> = ({
         {/* Top-Right: Translucent Circular 3-Dots Action Button */}
         <TouchableOpacity
           activeOpacity={0.75}
-          onPress={() => onOpenMenu(bookmark)}
+          onPress={() => setIsMenuOpen((prev) => !prev)}
           style={styles.circularBtn}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <MoreVertical size={20} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
       </View>
+
+      {/* Top-Right Download Action Dropdown Menu */}
+      {isMenuOpen && (
+        <View style={styles.menuContainer} pointerEvents="box-none">
+          <TouchableWithoutFeedback onPress={() => setIsMenuOpen(false)}>
+            <View style={StyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+          <View style={[styles.menuDropdown, { top: Math.max(insets.top, 16) + 48 }]}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.menuItem}
+              onPress={handleDownload}
+            >
+              <Download size={18} color="#FFFFFF" strokeWidth={2} />
+              <Text style={styles.menuItemText}>
+                {isCurrentVideo ? 'Download Video' : 'Download Image'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.menuItem}
+              onPress={handleCopyMediaLink}
+            >
+              <Copy size={18} color="#D1D5DB" strokeWidth={2} />
+              <Text style={styles.menuItemTextSecondary}>Copy Link</Text>
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.menuItem}
+              onPress={() => {
+                setIsMenuOpen(false);
+                const clean = sanitizeUrl(bookmark.url);
+                if (clean) Linking.openURL(clean);
+              }}
+            >
+              <ExternalLink size={18} color="#D1D5DB" strokeWidth={2} />
+              <Text style={styles.menuItemTextSecondary}>Open Original Post</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Bottom Description Overlay: Instagram Reels Style */}
       <LinearGradient
@@ -600,6 +674,48 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 6,
+  },
+  menuContainer: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 999,
+  },
+  menuDropdown: {
+    position: 'absolute',
+    right: 16,
+    width: 200,
+    backgroundColor: 'rgba(28, 25, 23, 0.96)',
+    borderRadius: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  menuItemText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  menuItemTextSecondary: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginHorizontal: 12,
   },
 });
 

@@ -540,13 +540,12 @@ export const DashboardScreen: React.FC = () => {
         <ToastHud toasts={toasts} onDismiss={dismissToast} />
       </SafeAreaView>
 
-      {/* Fullscreen Media Viewer (Backdrop clicks disabled, Reels overlay, top-left close, top-right menu) */}
+      {/* Fullscreen Media Viewer (Backdrop clicks disabled, Reels overlay, top-left close, top-right download menu) */}
       <FullScreenMediaModal
         visible={Boolean(selectedMediaForViewer)}
         bookmark={selectedMediaForViewer?.bookmark || null}
         initialIndex={selectedMediaForViewer?.initialIndex ?? 0}
         onClose={() => setSelectedMediaForViewer(null)}
-        onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
       />
 
       {/* Modals */}
