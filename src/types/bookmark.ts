@@ -46,7 +46,7 @@ export interface InstagramCardData {
     comments?: number;
     reposts?: number;
   } | null;
-  media: MediaItem[];
+  media: MediaItem[] | null;
   images?: Array<string | { url?: string; src?: string; display_url?: string; [key: string]: unknown }>;
   posted_at: string;
   video_thumbnail?: string | null;
