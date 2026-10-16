@@ -118,24 +118,76 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
   };
 
   const isRestricted = useMemo(() => {
-    if (cardData?.is_restricted) return true;
-    const authorUser = (author.username || '').toLowerCase();
-    const authorName = (author.name || '').toLowerCase();
-    const isUnknown = !authorUser || authorUser === 'unknown' || authorName === 'instagram user';
-    const noMedia = !mediaDetails.isVideo && mediaDetails.imageUrls.length === 0 && !mediaDetails.posterUrl;
-    const desc = (bookmark.description || '').trim().toLowerCase();
-    const title = (bookmark.title || '').trim().toLowerCase();
-    const hasRestrictedText =
-      desc.includes('the account is restricted') ||
-      desc.includes('people under') ||
-      desc.includes('limits on who can see') ||
-      desc.includes('restricted') ||
-      title.includes('restricted') ||
-      title.includes('content is unavailable') ||
-      title.includes('this content is unavailable');
+    if (cardData?.is_restricted || cardData?.restriction_reason) return true;
 
-    return Boolean(cardData?.is_restricted || hasRestrictedText || (isUnknown && noMedia && (!desc || title === 'instagram post')));
-  }, [cardData?.is_restricted, author.username, author.name, mediaDetails, bookmark.description, bookmark.title]);
+    const authorUser = (author.username || '').toLowerCase().trim();
+    const authorName = (author.name || '').toLowerCase().trim();
+    const isUnknown = !authorUser || authorUser === 'unknown' || authorName === 'instagram user' || authorName === 'instagram';
+
+    const desc = (bookmark.description || '').toLowerCase();
+    const title = (bookmark.title || '').toLowerCase();
+    const content = ((bookmark as any).content || '').toLowerCase();
+    const textPool = `${desc} ${title} ${content}`;
+
+    const hasRestrictedText =
+      textPool.includes('the account is restricted') ||
+      textPool.includes('account is restricted') ||
+      textPool.includes('restricted account') ||
+      textPool.includes('restricted profile') ||
+      textPool.includes('restricted') ||
+      textPool.includes('age-restricted') ||
+      textPool.includes('age restricted') ||
+      textPool.includes('age-gated') ||
+      textPool.includes('age gated') ||
+      textPool.includes('people under') ||
+      textPool.includes('limits on who can see') ||
+      textPool.includes('must be 18') ||
+      textPool.includes('18 or older') ||
+      textPool.includes('18+') ||
+      textPool.includes('adult content') ||
+      textPool.includes('sensitive content') ||
+      textPool.includes('sign in to confirm your age') ||
+      textPool.includes('confirm your age') ||
+      textPool.includes('content is unavailable') ||
+      textPool.includes('content unavailable') ||
+      textPool.includes('this content is unavailable') ||
+      textPool.includes('post is unavailable') ||
+      textPool.includes('reel is unavailable') ||
+      textPool.includes('video is unavailable') ||
+      textPool.includes('watch on instagram') ||
+      textPool.includes('watch this reel on instagram') ||
+      textPool.includes('login • instagram') ||
+      textPool.includes('log in to instagram');
+
+    if (hasRestrictedText) return true;
+
+    // Check for actual playable media (do not rely on mediaDetails.isVideo since isVideoBookmark returns true for any /reel/ URL)
+    const hasPlayableStream = Boolean(mediaDetails.videoUrl);
+    const hasImages = mediaDetails.imageUrls.length > 0;
+    const hasValidPoster = Boolean(
+      mediaDetails.posterUrl &&
+      !mediaDetails.posterUrl.includes('favicon') &&
+      !mediaDetails.posterUrl.includes('logo') &&
+      !mediaDetails.posterUrl.endsWith('.ico')
+    );
+    const hasRealMedia = hasPlayableStream || hasImages || hasValidPoster;
+
+    const isReelUrl = (bookmark.url || '').toLowerCase().includes('/reel');
+    const isGenericTitle =
+      !title ||
+      title === 'instagram post' ||
+      title === 'instagram reel' ||
+      title === 'instagram' ||
+      title === 'restricted instagram content' ||
+      title.includes('watch this reel on instagram');
+
+    // If there is no real playable media extracted for an Instagram reel/post and author is unknown or title is generic
+    if (!hasRealMedia && (isUnknown || isReelUrl) && (!desc.trim() || isGenericTitle)) {
+      return true;
+    }
+
+    return false;
+  }, [cardData?.is_restricted, cardData?.restriction_reason, author.username, author.name, mediaDetails, bookmark.description, bookmark.title, (bookmark as any).content, bookmark.url]);
 
   // RESTRICTED ACCOUNT / AGE-GATED CARD VIEW
   if (isRestricted) {
@@ -203,7 +255,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
           </View>
 
           <Text style={[styles.restrictedText, { color: colors.textHeading }]}>
-            The account is restricted, please view it on Instagram.
+            {cardData?.restriction_reason || 'The account is restricted, please view it on Instagram.'}
           </Text>
 
           <TouchableOpacity
