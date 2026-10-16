@@ -215,7 +215,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
                 {author.avatar_url ? (
                   <SafeImage url={author.avatar_url} style={styles.postAvatarImg} />
                 ) : (
-                  <InstagramBrandLogo size={14} />
+                  <InstagramBrandLogo size={18} />
                 )}
               </View>
             </LinearGradient>
@@ -225,7 +225,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
                 <Text style={[styles.username, { color: colors.textHeading }]} numberOfLines={1}>
                   {author.username && author.username !== 'unknown' ? `@${author.username}` : 'Instagram'}
                 </Text>
-                {author.verified && <VerifiedBadge size={13} color="#3B82F6" />}
+                {author.verified && <VerifiedBadge size={15} color="#3B82F6" />}
               </View>
               <Text style={[styles.timeText, { color: colors.textMuted }]}>
                 {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
@@ -234,16 +234,16 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
           </View>
 
           <View style={styles.headerRight}>
-            <InstagramBrandLogo size={18} />
+            <InstagramBrandLogo size={22} />
             <TouchableOpacity
               onPress={(e) => {
                 e.stopPropagation();
                 onOpenMenu(bookmark);
               }}
               style={styles.menuBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <MoreVertical size={16} color={colors.textMuted} />
+              <MoreVertical size={20} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -301,20 +301,20 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
             <Text style={[styles.profileUsername, { color: colors.textHeading }]} numberOfLines={1}>
               {author.username}
             </Text>
-            {author.verified && <VerifiedBadge size={14} color="#3B82F6" />}
+            {author.verified && <VerifiedBadge size={16} color="#3B82F6" />}
           </View>
 
           <View style={styles.headerRight}>
-            <InstagramBrandLogo size={18} />
+            <InstagramBrandLogo size={22} />
             <TouchableOpacity
               onPress={(e) => {
                 e.stopPropagation();
                 onOpenMenu(bookmark);
               }}
               style={styles.menuBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <MoreVertical size={16} color={colors.textMuted} />
+              <MoreVertical size={20} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -453,7 +453,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
               <Text style={[styles.username, { color: colors.textHeading }]} numberOfLines={1}>
                 {author.username}
               </Text>
-              {author.verified && <VerifiedBadge size={13} color="#3B82F6" />}
+              {author.verified && <VerifiedBadge size={15} color="#3B82F6" />}
             </View>
             <Text style={[styles.timeText, { color: colors.textMuted }]}>
               {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
@@ -462,16 +462,16 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
         </View>
 
         <View style={styles.headerRight}>
-          <InstagramBrandLogo size={18} />
+          <InstagramBrandLogo size={22} />
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               onOpenMenu(bookmark);
             }}
             style={styles.menuBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -517,11 +517,11 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
         <View style={styles.engagementRow}>
           <View style={styles.leftActions}>
             <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
-              <Heart size={20} color={colors.textHeading} />
+              <Heart size={24} color={colors.textHeading} />
             </TouchableOpacity>
 
             <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionWithCount}>
-              <MessageCircle size={20} color={colors.textHeading} />
+              <MessageCircle size={24} color={colors.textHeading} />
               {Boolean(commentsCount) && (
                 <Text style={[styles.actionCountText, { color: colors.textHeading }]}>
                   {commentsCount}
@@ -531,7 +531,7 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
 
             {Boolean(repostsCount) && (
               <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionWithCount}>
-                <Repeat size={19} color={colors.textHeading} />
+                <Repeat size={22} color={colors.textHeading} />
                 <Text style={[styles.actionCountText, { color: colors.textHeading }]}>
                   {repostsCount}
                 </Text>
@@ -539,12 +539,12 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
             )}
 
             <TouchableOpacity activeOpacity={0.7} onPress={handleShare} style={styles.actionBtn}>
-              <Send size={19} color={colors.textHeading} />
+              <Send size={22} color={colors.textHeading} />
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
-            <BookmarkIcon size={20} color={colors.textHeading} />
+            <BookmarkIcon size={24} color={colors.textHeading} />
           </TouchableOpacity>
         </View>
 
@@ -578,10 +578,10 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -591,41 +591,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   profileHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     flex: 1,
   },
   profileUsername: {
-    fontSize: 14.5,
+    fontSize: 16.5,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
   },
   postRing: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    padding: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    padding: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   postAvatarInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   postAvatarImg: {
@@ -639,26 +641,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitial: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
   },
   authorInfo: {
     flex: 1,
+    gap: 2,
   },
   usernameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   username: {
-    fontSize: 13.5,
+    fontSize: 15.5,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
   timeText: {
-    fontSize: 11,
+    fontSize: 13,
+    marginTop: 1,
   },
   menuBtn: {
-    padding: 2,
+    padding: 4,
   },
   mediaContainer: {
     width: '100%',
@@ -678,32 +683,33 @@ const styles = StyleSheet.create({
   },
   carouselBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
   carouselBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   body: {
-    padding: 12,
-    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
   },
   engagementRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
   leftActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 18,
   },
   actionBtn: {
     padding: 2,
@@ -711,52 +717,57 @@ const styles = StyleSheet.create({
   actionWithCount: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
     padding: 2,
   },
   actionCountText: {
-    fontSize: 12.5,
+    fontSize: 14,
     fontWeight: '600',
   },
   likesText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '700',
-    marginTop: 2,
+    marginTop: 4,
+    letterSpacing: -0.1,
   },
   caption: {
-    fontSize: 13.5,
-    lineHeight: 19,
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: -0.1,
   },
   captionUsername: {
     fontWeight: '700',
+    fontSize: 15,
   },
   commentsLink: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '500',
   },
 
   // Profile Card Specific
   profileBody: {
-    padding: 12,
-    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   profileRing: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    padding: 2,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    padding: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileAvatarContainer: {
     width: '100%',
     height: '100%',
-    borderRadius: 24,
+    borderRadius: 30,
     overflow: 'hidden',
   },
   profileAvatarImg: {
@@ -765,11 +776,12 @@ const styles = StyleSheet.create({
   },
   profileStatsWrap: {
     flex: 1,
-    gap: 4,
+    gap: 6,
   },
   authorDisplayName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
   statsColumns: {
     flexDirection: 'row',
@@ -780,21 +792,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statColNum: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
   },
   statColLabel: {
-    fontSize: 10.5,
-    marginTop: 1,
+    fontSize: 13,
+    marginTop: 2,
   },
   viewProfileBtn: {
-    borderRadius: 10,
-    paddingVertical: 7,
+    borderRadius: 12,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   viewProfileBtnText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   gridTabHeader: {
@@ -802,10 +814,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   gridTabText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -824,28 +836,28 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   restrictedContainer: {
-    paddingVertical: 32,
+    paddingVertical: 36,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   restrictedIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(217, 119, 6, 0.25)',
   },
   restrictedText: {
-    fontSize: 14.5,
+    fontSize: 15.5,
     fontWeight: '600',
     textAlign: 'center',
-    lineHeight: 21,
-    maxWidth: 260,
-    marginBottom: 16,
+    lineHeight: 23,
+    maxWidth: 280,
+    marginBottom: 18,
   },
   restrictedBtnWrap: {
     borderRadius: 12,
@@ -860,13 +872,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
     borderRadius: 12,
   },
   restrictedBtnText: {
     color: '#FFFFFF',
-    fontSize: 13.5,
+    fontSize: 14.5,
     fontWeight: '700',
   },
 });

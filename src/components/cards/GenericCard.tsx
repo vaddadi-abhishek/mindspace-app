@@ -88,7 +88,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           />
           {bookmark.is_article && (
             <View style={styles.articleBadge}>
-              <BookOpen size={11} color="#FFFFFF" />
+              <BookOpen size={13} color="#FFFFFF" />
               <Text style={styles.articleBadgeText}>Article</Text>
             </View>
           )}
@@ -103,7 +103,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           />
           {bookmark.is_article && (
             <View style={styles.articleBadge}>
-              <BookOpen size={11} color="#FFFFFF" />
+              <BookOpen size={13} color="#FFFFFF" />
               <Text style={styles.articleBadgeText}>Article</Text>
             </View>
           )}
@@ -121,7 +121,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
           />
           {bookmark.is_article && (
             <View style={styles.articleBadge}>
-              <BookOpen size={11} color="#FFFFFF" />
+              <BookOpen size={13} color="#FFFFFF" />
               <Text style={styles.articleBadgeText}>Article</Text>
             </View>
           )}
@@ -164,7 +164,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
             style={styles.menuBtn}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -202,7 +202,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
                 },
               ]}
             >
-              <Sparkles size={11} color={colors.primary} />
+              <Sparkles size={14} color={colors.primary} />
               <Text style={[styles.aiPillText, { color: colors.primary }]}>
                 {bookmark.ai_category && bookmark.ai_category[0]
                   ? bookmark.ai_category[0]
@@ -237,7 +237,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
                 },
               ]}
             >
-              <Clock size={10} color={colors.textMuted} />
+              <Clock size={13} color={colors.textMuted} />
               <Text style={[styles.aiPillText, { color: colors.textBody }]}>
                 {cardData?.reading_time_minutes} min read
               </Text>
@@ -254,7 +254,7 @@ export const GenericCard: React.FC<GenericCardProps> = ({
                 },
               ]}
             >
-              <BookOpen size={10} color={colors.textMuted} />
+              <BookOpen size={13} color={colors.textMuted} />
               <Text style={[styles.aiPillText, { color: colors.textBody }]}>
                 Read Mode
               </Text>
@@ -268,10 +268,10 @@ export const GenericCard: React.FC<GenericCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -295,25 +295,25 @@ const styles = StyleSheet.create({
   },
   articleBadge: {
     position: 'absolute',
-    bottom: 8,
-    left: 8,
+    bottom: 10,
+    left: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    gap: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
   articleBadgeText: {
     color: '#FFFFFF',
-    fontSize: 10.5,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   body: {
-    padding: 14,
-    gap: 6,
+    padding: 16,
+    gap: 8,
   },
   topMetaRow: {
     flexDirection: 'row',
@@ -324,54 +324,54 @@ const styles = StyleSheet.create({
   sourceGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     flex: 1,
   },
   logoIcon: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
   },
   siteNameText: {
-    fontSize: 12,
+    fontSize: 14.5,
     fontWeight: '600',
   },
   dotSep: {
-    fontSize: 12,
+    fontSize: 13.5,
   },
   dateText: {
-    fontSize: 11,
+    fontSize: 13.5,
   },
   menuBtn: {
     padding: 2,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16.5,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 23,
     letterSpacing: -0.2,
   },
   description: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14.5,
+    lineHeight: 21,
   },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 4,
+    marginTop: 6,
   },
   aiPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 9999,
     borderWidth: 1,
   },
   aiPillText: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

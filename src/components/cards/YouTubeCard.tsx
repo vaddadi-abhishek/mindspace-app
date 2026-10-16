@@ -139,7 +139,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
               <Text style={[styles.channelName, { color: colors.textBody }]} numberOfLines={1}>
                 {channel.name}
               </Text>
-              <CheckCircle size={11} color={colors.textMuted} style={styles.verifiedIcon} />
+              <CheckCircle size={14} color={colors.textMuted} style={styles.verifiedIcon} />
               {Boolean(viewsCount) && (
                 <>
                   <Text style={[styles.metaDot, { color: colors.textMuted }]}>·</Text>
@@ -167,7 +167,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
             style={styles.menuBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -187,7 +187,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
               onPress={handleOpenVideo}
               style={styles.likeSubPill}
             >
-              <ThumbsUp size={13} color={colors.textHeading} />
+              <ThumbsUp size={17} color={colors.textHeading} />
               <Text style={[styles.pillText, { color: colors.textHeading }]}>
                 {likesCount || 'Like'}
               </Text>
@@ -198,7 +198,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
               onPress={handleOpenVideo}
               style={styles.dislikeSubPill}
             >
-              <ThumbsDown size={13} color={colors.textHeading} />
+              <ThumbsDown size={17} color={colors.textHeading} />
             </TouchableOpacity>
           </View>
 
@@ -208,7 +208,7 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
             onPress={handleShare}
             style={[styles.singlePill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}
           >
-            <Share2 size={13} color={colors.textHeading} />
+            <Share2 size={17} color={colors.textHeading} />
             <Text style={[styles.pillText, { color: colors.textHeading }]}>Share</Text>
           </TouchableOpacity>
         </View>
@@ -219,10 +219,10 @@ export const YouTubeCard: React.FC<YouTubeCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -242,115 +242,115 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   body: {
-    padding: 12,
-    gap: 8,
+    padding: 16,
+    gap: 10,
   },
   channelRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: 12,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     marginTop: 2,
   },
   avatarFallback: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
   avatarInitial: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
   },
   infoCol: {
     flex: 1,
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 19,
+    lineHeight: 22,
     marginBottom: 4,
   },
   channelMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 4,
+    gap: 6,
   },
   channelName: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   verifiedIcon: {
     marginLeft: 1,
   },
   metaDot: {
-    fontSize: 11,
+    fontSize: 13,
   },
   viewsText: {
-    fontSize: 11,
+    fontSize: 13,
   },
   dateText: {
-    fontSize: 11,
+    fontSize: 13,
   },
   menuBtn: {
     padding: 2,
   },
   description: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 14,
+    lineHeight: 20,
     marginTop: 2,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingTop: 8,
+    gap: 10,
+    paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 2,
+    marginTop: 4,
   },
   jointPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
   },
   likeSubPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   dislikeSubPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pillDivider: {
     width: 1,
-    height: 14,
+    height: 16,
   },
   singlePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 22,
     borderWidth: 1,
   },
   pillText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '600',
   },
 });

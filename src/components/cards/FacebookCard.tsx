@@ -303,7 +303,7 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
               <Text style={[styles.authorName, { color: colors.textHeading }]} numberOfLines={1}>
                 {author.name}
               </Text>
-              {author.verified && <FacebookVerifiedBadge size={14} />}
+              {author.verified && <FacebookVerifiedBadge size={16} />}
             </View>
             <Text style={[styles.timeText, { color: colors.textMuted }]}>
               {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
@@ -312,16 +312,16 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
         </View>
 
         <View style={styles.headerRight}>
-          <FacebookBrandLogo size={18} />
+          <FacebookBrandLogo size={22} />
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               onOpenMenu(bookmark);
             }}
             style={styles.menuBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -368,21 +368,21 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
       {/* Metrics & Actions Row */}
       <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
         <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.metricItem}>
-          <ThumbsUp size={15} color="#1877F2" />
+          <ThumbsUp size={20} color="#1877F2" />
           <Text style={[styles.metricText, { color: colors.textHeading }]}>
             {likesCount || 'Like'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.metricItem}>
-          <MessageSquare size={15} color={colors.textMuted} />
+          <MessageSquare size={20} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             {commentsCount ? `${commentsCount} comments` : 'Comment'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity activeOpacity={0.7} onPress={handleShare} style={styles.metricItem}>
-          <Share2 size={15} color={colors.textMuted} />
+          <Share2 size={20} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             {sharesCount ? `${sharesCount} shares` : 'Share'}
           </Text>
@@ -394,11 +394,11 @@ export const FacebookCard: React.FC<FacebookCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
-    padding: 14,
+    marginVertical: 8,
+    padding: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -408,61 +408,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     flex: 1,
   },
   authorNameWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   avatarFallback: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '700',
   },
   authorName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
   timeText: {
-    fontSize: 11,
+    fontSize: 13.5,
+    marginTop: 1,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   menuBtn: {
-    padding: 2,
+    padding: 4,
   },
   postText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 10,
+    fontSize: 15.5,
+    lineHeight: 23,
+    marginBottom: 12,
+    letterSpacing: -0.15,
   },
   mediaWrap: {
     height: 350,
     borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },

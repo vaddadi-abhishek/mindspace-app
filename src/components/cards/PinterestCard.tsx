@@ -82,7 +82,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             style={styles.floatingMenu}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MoreVertical size={16} color="#FFFFFF" />
+            <MoreVertical size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       ) : mediaDetails.imageUrls.length > 1 ? (
@@ -102,7 +102,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             style={styles.floatingMenu}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MoreVertical size={16} color="#FFFFFF" />
+            <MoreVertical size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       ) : (mediaDetails.imageUrls.length > 0 || mediaDetails.posterUrl) ? (
@@ -124,7 +124,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
             style={styles.floatingMenu}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MoreVertical size={16} color="#FFFFFF" />
+            <MoreVertical size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </TouchableOpacity>
       ) : null}
@@ -147,7 +147,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
           <View style={styles.metricsGroup}>
             {Boolean(commentsCount) && (
               <View style={styles.metricItem}>
-                <MessageCircle size={12} color={colors.textMuted} />
+                <MessageCircle size={16} color={colors.textMuted} />
                 <Text style={[styles.metricText, { color: colors.textMuted }]}>
                   {commentsCount}
                 </Text>
@@ -156,7 +156,7 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
 
             {Boolean(savesCount) && (
               <View style={styles.savesRow}>
-                <SaveIcon size={12} color="#E60023" />
+                <SaveIcon size={16} color="#E60023" />
                 <Text style={[styles.savesText, { color: colors.textHeading }]}>
                   {savesCount}
                 </Text>
@@ -171,10 +171,10 @@ export const PinterestCard: React.FC<PinterestCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -194,63 +194,63 @@ const styles = StyleSheet.create({
   },
   floatingMenu: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    borderRadius: 14,
-    padding: 6,
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    borderRadius: 18,
+    padding: 8,
   },
   body: {
-    padding: 12,
-    gap: 6,
+    padding: 16,
+    gap: 8,
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 19,
+    lineHeight: 22,
   },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 2,
+    marginTop: 4,
   },
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     flex: 1,
   },
   logo: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
   },
   sourceText: {
-    fontSize: 11.5,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
   metricsGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   metricItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   metricText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '600',
   },
   savesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   savesText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '700',
   },
 });

@@ -106,16 +106,16 @@ export const RedditCard: React.FC<RedditCardProps> = ({
         </View>
 
         <View style={styles.headerRight}>
-          <RedditBrandLogo size={20} />
+          <RedditBrandLogo size={22} />
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               onOpenMenu(bookmark);
             }}
             style={styles.menuBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -173,13 +173,13 @@ export const RedditCard: React.FC<RedditCardProps> = ({
           {/* Vote Container */}
           <View style={[styles.pillContainer, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}>
             <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.voteArrowBtn}>
-              <ArrowBigUp size={16} color="#FF4500" />
+              <ArrowBigUp size={22} color="#FF4500" />
             </TouchableOpacity>
             <Text style={[styles.voteCountText, { color: colors.textHeading }]}>
               {upvotesCount || 'Vote'}
             </Text>
             <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.voteArrowBtn}>
-              <ArrowBigDown size={16} color={colors.textMuted} />
+              <ArrowBigDown size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -189,7 +189,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
             onPress={handleOpenPost}
             style={[styles.singlePill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}
           >
-            <MessageSquare size={13} color={colors.textMuted} />
+            <MessageSquare size={18} color={colors.textMuted} />
             <Text style={[styles.pillText, { color: colors.textHeading }]}>
               {commentsCount || 0}
             </Text>
@@ -202,7 +202,7 @@ export const RedditCard: React.FC<RedditCardProps> = ({
           onPress={handleShare}
           style={[styles.singlePill, { backgroundColor: isDark ? '#272729' : '#F1EFEA', borderColor: colors.borderLight }]}
         >
-          <Share2 size={13} color={colors.textMuted} />
+          <Share2 size={18} color={colors.textMuted} />
           <Text style={[styles.pillText, { color: colors.textHeading }]}>Share</Text>
         </TouchableOpacity>
       </View>
@@ -212,11 +212,11 @@ export const RedditCard: React.FC<RedditCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
-    padding: 14,
+    marginVertical: 8,
+    padding: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -226,73 +226,77 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     flex: 1,
   },
   icon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   iconFallback: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FF4500',
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconInitial: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: '800',
   },
   subMeta: {
     flex: 1,
+    gap: 2,
   },
   subName: {
-    fontSize: 13,
+    fontSize: 15.5,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
   postMeta: {
-    fontSize: 11,
+    fontSize: 13.5,
+    marginTop: 1,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
   },
   menuBtn: {
-    padding: 2,
+    padding: 4,
   },
   title: {
-    fontSize: 14.5,
+    fontSize: 16.5,
     fontWeight: '700',
-    lineHeight: 20,
-    marginBottom: 6,
+    lineHeight: 23,
+    marginBottom: 8,
+    letterSpacing: -0.15,
   },
   bodyText: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 12,
   },
   mediaWrap: {
     height: 350,
     borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
   carouselWrap: {
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   mediaImage: {
     width: '100%',
@@ -300,59 +304,60 @@ const styles = StyleSheet.create({
   },
   carouselBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
   carouselBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
+    paddingTop: 12,
+    paddingBottom: 2,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   leftPills: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   pillContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
   voteArrowBtn: {
-    padding: 3,
+    padding: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
   voteCountText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
   },
   singlePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 22,
     borderWidth: 1,
   },
   pillText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '600',
   },
 });

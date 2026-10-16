@@ -36,23 +36,23 @@ export const SkeletonCard: React.FC = () => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
+    marginVertical: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 3,
   },
   imagePlaceholder: {
-    height: 130,
+    height: 180,
     width: '100%',
     opacity: 0.6,
   },
   body: {
-    padding: 14,
-    gap: 8,
+    padding: 16,
+    gap: 10,
   },
   line: {
     height: 14,

@@ -118,16 +118,16 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
         </View>
 
         <View style={styles.headerRight}>
-          <LinkedInBrandLogo size={18} />
+          <LinkedInBrandLogo size={22} />
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               onOpenMenu(bookmark);
             }}
             style={styles.menuBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -209,22 +209,22 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
       {/* Action Buttons Row */}
       <View style={[styles.actionsRow, { borderTopColor: colors.borderLight }]}>
         <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
-          <ThumbsUp size={15} color={colors.textMuted} />
+          <ThumbsUp size={19} color={colors.textMuted} />
           <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Like</Text>
         </TouchableOpacity>
 
         <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
-          <MessageSquare size={15} color={colors.textMuted} />
+          <MessageSquare size={19} color={colors.textMuted} />
           <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Comment</Text>
         </TouchableOpacity>
 
         <TouchableOpacity activeOpacity={0.7} onPress={handleOpenPost} style={styles.actionBtn}>
-          <Repeat size={15} color={colors.textMuted} />
+          <Repeat size={19} color={colors.textMuted} />
           <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Repost</Text>
         </TouchableOpacity>
 
         <TouchableOpacity activeOpacity={0.7} onPress={handleShare} style={styles.actionBtn}>
-          <Share2 size={15} color={colors.textMuted} />
+          <Share2 size={19} color={colors.textMuted} />
           <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Send</Text>
         </TouchableOpacity>
       </View>
@@ -234,11 +234,11 @@ export const LinkedInCard: React.FC<LinkedInCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
-    padding: 14,
+    marginVertical: 8,
+    padding: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -248,70 +248,73 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   avatarFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
   },
   authorNames: {
     flex: 1,
+    gap: 2,
   },
   authorName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
   pageIntent: {
-    fontSize: 11,
+    fontSize: 13.5,
     marginTop: 1,
   },
   timeText: {
-    fontSize: 10.5,
+    fontSize: 13,
     marginTop: 1,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   menuBtn: {
-    padding: 2,
+    padding: 4,
   },
   postText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 10,
+    fontSize: 15.5,
+    lineHeight: 23,
+    marginBottom: 12,
+    letterSpacing: -0.15,
   },
   mediaWrap: {
     height: 350,
     borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   carouselWrap: {
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   mediaImage: {
     width: '100%',
@@ -321,24 +324,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingVertical: 6,
     marginBottom: 4,
   },
   reactionsBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   reactionCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#0A66C2',
     alignItems: 'center',
     justifyContent: 'center',
   },
   reactionCountText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '600',
   },
   commentsRepostsRow: {
@@ -347,24 +350,25 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metricDetailText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
+    paddingTop: 12,
+    paddingBottom: 2,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 3,
+    gap: 6,
+    paddingVertical: 4,
     paddingHorizontal: 4,
   },
   actionLabel: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '600',
   },
 });

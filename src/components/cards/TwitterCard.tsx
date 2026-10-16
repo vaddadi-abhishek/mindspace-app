@@ -288,7 +288,7 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
               >
                 {author.name}
               </Text>
-              {author.verified && <VerifiedBadge size={14} />}
+              {author.verified && <VerifiedBadge size={16} />}
             </View>
             <Text style={[styles.handleText, { color: colors.textMuted }]} numberOfLines={1}>
               {(author.handle.startsWith('@') ? author.handle : `@${author.handle}`)} · {formatRelativeDate(postedAt)}
@@ -297,16 +297,16 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
         </View>
 
         <View style={styles.headerRight}>
-          <XBrandLogo size={16} color={colors.textHeading} />
+          <XBrandLogo size={20} color={colors.textHeading} />
           <TouchableOpacity
             onPress={(e) => {
               e.stopPropagation();
               onOpenMenu(bookmark);
             }}
             style={styles.menuBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <MoreVertical size={16} color={colors.textMuted} />
+            <MoreVertical size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </View>
@@ -382,28 +382,28 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
       {/* Metrics Action Row */}
       <View style={[styles.metricsRow, { borderTopColor: colors.borderLight }]}>
         <View style={styles.metricItem}>
-          <MessageCircle size={14} color={colors.textMuted} />
+          <MessageCircle size={18} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             {formatNumber(metrics.replies) || 0}
           </Text>
         </View>
 
         <View style={styles.metricItem}>
-          <Repeat size={14} color={colors.textMuted} />
+          <Repeat size={18} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             {formatNumber(metrics.reposts) || 0}
           </Text>
         </View>
 
         <View style={styles.metricItem}>
-          <Heart size={14} color={colors.textMuted} />
+          <Heart size={18} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             {formatNumber(metrics.likes) || 0}
           </Text>
         </View>
 
         <View style={styles.metricItem}>
-          <BookmarkIcon size={14} color={colors.textMuted} />
+          <BookmarkIcon size={18} color={colors.textMuted} />
           <Text style={[styles.metricText, { color: colors.textMuted }]}>
             {formatNumber(metrics.bookmarks) || 0}
           </Text>
@@ -413,9 +413,9 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
           activeOpacity={0.7}
           onPress={handleShare}
           style={styles.metricItem}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Share2 size={14} color={colors.textMuted} />
+          <Share2 size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -424,11 +424,11 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    marginVertical: 6,
-    padding: 14,
+    marginVertical: 8,
+    padding: 16,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -438,89 +438,92 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   avatarFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitial: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
   },
   authorNames: {
     flex: 1,
+    gap: 2,
   },
   nameVerifiedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   authorName: {
-    fontSize: 14.5,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
   handleText: {
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 1,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   menuBtn: {
-    padding: 2,
+    padding: 4,
   },
   articleBadgeWrap: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   articleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
   },
   articleBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   tweetText: {
-    fontSize: 14.5,
-    lineHeight: 21,
-    marginBottom: 10,
+    fontSize: 16,
+    lineHeight: 23,
+    marginBottom: 12,
+    letterSpacing: -0.15,
   },
   mediaWrap: {
     height: 350,
     borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
   gridWrap: {
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   mediaImage: {
     width: '100%',
@@ -528,50 +531,51 @@ const styles = StyleSheet.create({
   },
   carouselBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
   carouselBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   dateViewsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 10,
     flexWrap: 'wrap',
   },
   dateViewsText: {
-    fontSize: 11.5,
+    fontSize: 13.5,
   },
   dotSep: {
-    fontSize: 11.5,
+    fontSize: 13.5,
   },
   viewsHighlight: {
-    fontSize: 11.5,
+    fontSize: 13.5,
     fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 10,
+    paddingTop: 12,
+    paddingBottom: 2,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   metricItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 2,
+    gap: 6,
+    paddingVertical: 4,
   },
   metricText: {
-    fontSize: 12,
+    fontSize: 13.5,
     fontWeight: '500',
   },
 
