@@ -16,6 +16,8 @@ import {
   Bookmark as BookmarkIcon,
   MoreVertical,
   LayoutGrid,
+  Lock,
+  ExternalLink,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
@@ -114,6 +116,115 @@ export const InstagramCard: React.FC<InstagramCardProps> = ({
       });
     } catch {}
   };
+
+  const isRestricted = useMemo(() => {
+    if (cardData?.is_restricted) return true;
+    const authorUser = (author.username || '').toLowerCase();
+    const authorName = (author.name || '').toLowerCase();
+    const isUnknown = !authorUser || authorUser === 'unknown' || authorName === 'instagram user';
+    const noMedia = !mediaDetails.isVideo && mediaDetails.imageUrls.length === 0 && !mediaDetails.posterUrl;
+    const desc = (bookmark.description || '').trim().toLowerCase();
+    const title = (bookmark.title || '').trim().toLowerCase();
+    const hasRestrictedText =
+      desc.includes('the account is restricted') ||
+      desc.includes('people under') ||
+      desc.includes('limits on who can see') ||
+      desc.includes('restricted') ||
+      title.includes('restricted') ||
+      title.includes('content is unavailable') ||
+      title.includes('this content is unavailable');
+
+    return Boolean(cardData?.is_restricted || hasRestrictedText || (isUnknown && noMedia && (!desc || title === 'instagram post')));
+  }, [cardData?.is_restricted, author.username, author.name, mediaDetails, bookmark.description, bookmark.title]);
+
+  // RESTRICTED ACCOUNT / AGE-GATED CARD VIEW
+  if (isRestricted) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.92}
+        onPress={handleOpenPost}
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
+        {/* Header */}
+        <View style={[styles.header, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight }]}>
+          <View style={styles.authorRow}>
+            <LinearGradient
+              colors={['#f09433', '#dc2743', '#bc1888']}
+              style={styles.postRing}
+            >
+              <View style={[styles.postAvatarInner, { backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }]}>
+                {author.avatar_url ? (
+                  <SafeImage url={author.avatar_url} style={styles.postAvatarImg} />
+                ) : (
+                  <InstagramBrandLogo size={14} />
+                )}
+              </View>
+            </LinearGradient>
+
+            <View style={styles.authorInfo}>
+              <View style={styles.usernameRow}>
+                <Text style={[styles.username, { color: colors.textHeading }]} numberOfLines={1}>
+                  {author.username && author.username !== 'unknown' ? `@${author.username}` : 'Instagram'}
+                </Text>
+                {author.verified && <VerifiedBadge size={13} color="#3B82F6" />}
+              </View>
+              <Text style={[styles.timeText, { color: colors.textMuted }]}>
+                {formatRelativeDate(cardData?.posted_at || bookmark.created_at)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.headerRight}>
+            <InstagramBrandLogo size={18} />
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                onOpenMenu(bookmark);
+              }}
+              style={styles.menuBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <MoreVertical size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Restricted Notice Body */}
+        <View style={styles.restrictedContainer}>
+          <View style={[styles.restrictedIconCircle, { backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : 'rgba(217, 119, 6, 0.1)' }]}>
+            <Lock size={24} color="#D97706" />
+          </View>
+
+          <Text style={[styles.restrictedText, { color: colors.textHeading }]}>
+            The account is restricted, please view it on Instagram.
+          </Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleOpenPost}
+            style={styles.restrictedBtnWrap}
+          >
+            <LinearGradient
+              colors={['#f09433', '#dc2743', '#bc1888']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.restrictedBtn}
+            >
+              <Text style={styles.restrictedBtnText}>View on Instagram</Text>
+              <ExternalLink size={14} color="#FFFFFF" style={{ marginLeft: 6 }} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  }
 
   // PROFILE CARD VIEW
   if (isProfile) {
@@ -659,5 +770,51 @@ const styles = StyleSheet.create({
   gridImage: {
     width: '100%',
     height: '100%',
+  },
+  restrictedContainer: {
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  restrictedIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(217, 119, 6, 0.25)',
+  },
+  restrictedText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 21,
+    maxWidth: 260,
+    marginBottom: 16,
+  },
+  restrictedBtnWrap: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  restrictedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+  },
+  restrictedBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '700',
   },
 });
