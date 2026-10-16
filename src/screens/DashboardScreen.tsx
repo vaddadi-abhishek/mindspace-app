@@ -410,7 +410,37 @@ export const DashboardScreen: React.FC = () => {
     return () => sub.remove();
   }, []);
 
+  // Stable Card Action Handlers to prevent breaking React.memo(BookmarkCard)
+  const handleOpenMenu = useCallback((bm: Bookmark) => {
+    setSelectedBookmarkForMenu(bm);
+  }, []);
 
+  const handleReadArticle = useCallback((bm: Bookmark) => {
+    setSelectedBookmarkForReader(bm);
+  }, []);
+
+  const handleViewAiContext = useCallback((bm: Bookmark) => {
+    setSelectedBookmarkForAi(bm);
+  }, []);
+
+  const handleOpenMedia = useCallback((bm: Bookmark, idx?: number) => {
+    setSelectedMediaForViewer({ bookmark: bm, initialIndex: idx });
+  }, []);
+
+  const keyExtractor = useCallback((item: Bookmark) => item.id, []);
+
+  const renderBookmarkItem = useCallback(
+    ({ item }: { item: Bookmark }) => (
+      <BookmarkCard
+        bookmark={item}
+        onOpenMenu={handleOpenMenu}
+        onReadArticle={handleReadArticle}
+        onViewAiContext={handleViewAiContext}
+        onOpenMedia={handleOpenMedia}
+      />
+    ),
+    [handleOpenMenu, handleReadArticle, handleViewAiContext, handleOpenMedia]
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -433,16 +463,13 @@ export const DashboardScreen: React.FC = () => {
         <FlatList
           style={styles.feedList}
           data={bookmarks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <BookmarkCard
-              bookmark={item}
-              onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
-              onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
-              onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
-              onOpenMedia={(bm, idx) => setSelectedMediaForViewer({ bookmark: bm, initialIndex: idx })}
-            />
-          )}
+          keyExtractor={keyExtractor}
+          renderItem={renderBookmarkItem}
+          initialNumToRender={3}
+          maxToRenderPerBatch={4}
+          windowSize={21}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={false}
           contentContainerStyle={[
             styles.listContent,
             bookmarks.length === 0 && styles.listEmptyContent,
@@ -495,10 +522,10 @@ export const DashboardScreen: React.FC = () => {
       >
         <SearchScreen
           bookmarks={bookmarks}
-          onOpenMenu={(bm) => setSelectedBookmarkForMenu(bm)}
-          onReadArticle={(bm) => setSelectedBookmarkForReader(bm)}
-          onViewAiContext={(bm) => setSelectedBookmarkForAi(bm)}
-          onOpenMedia={(bm, idx) => setSelectedMediaForViewer({ bookmark: bm, initialIndex: idx })}
+          onOpenMenu={handleOpenMenu}
+          onReadArticle={handleReadArticle}
+          onViewAiContext={handleViewAiContext}
+          onOpenMedia={handleOpenMedia}
           planInfo={planInfo}
         />
       </View>

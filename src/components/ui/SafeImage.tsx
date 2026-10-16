@@ -81,7 +81,16 @@ export const SafeImage: React.FC<SafeImageProps> = React.memo(({
     }
   };
 
-  if (!isValidImageUrl || !currentUri || hasError) {
+  const token = getCachedAuthToken();
+  const imageSource = React.useMemo(() => {
+    if (!currentUri) return undefined;
+    const headers = currentUri.includes('/proxy-image') && token
+      ? { Authorization: `Bearer ${token}` }
+      : undefined;
+    return { uri: currentUri, headers };
+  }, [currentUri, token]);
+
+  if (!isValidImageUrl || !currentUri || hasError || !imageSource) {
     return (
       <View
         style={[
@@ -101,14 +110,9 @@ export const SafeImage: React.FC<SafeImageProps> = React.memo(({
     );
   }
 
-  const token = getCachedAuthToken();
-  const headers = currentUri.includes('/proxy-image') && token
-    ? { Authorization: `Bearer ${token}` }
-    : undefined;
-
   return (
     <Image
-      source={{ uri: currentUri, headers }}
+      source={imageSource}
       style={style}
       resizeMode={resizeMode}
       onError={handleError}

@@ -150,6 +150,21 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
     return PLATFORM_TABS.filter((t) => t.id !== 'all' && selectedPlatforms.includes(t.id));
   }, [isFiltered, selectedPlatforms]);
 
+  const keyExtractor = useCallback((item: Bookmark) => item.id, []);
+
+  const renderBookmarkItem = useCallback(
+    ({ item }: { item: Bookmark }) => (
+      <BookmarkCard
+        bookmark={item}
+        onOpenMenu={onOpenMenu}
+        onReadArticle={onReadArticle}
+        onViewAiContext={onViewAiContext}
+        onOpenMedia={onOpenMedia}
+      />
+    ),
+    [onOpenMenu, onReadArticle, onViewAiContext, onOpenMedia]
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Search Header Row */}
@@ -321,16 +336,13 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
         <FlatList
           style={styles.resultsList}
           data={filteredBookmarks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <BookmarkCard
-              bookmark={item}
-              onOpenMenu={onOpenMenu}
-              onReadArticle={onReadArticle}
-              onViewAiContext={onViewAiContext}
-              onOpenMedia={onOpenMedia}
-            />
-          )}
+          keyExtractor={keyExtractor}
+          renderItem={renderBookmarkItem}
+          initialNumToRender={3}
+          maxToRenderPerBatch={4}
+          windowSize={21}
+          updateCellsBatchingPeriod={50}
+          removeClippedSubviews={false}
           contentContainerStyle={[
             styles.listContent,
             filteredBookmarks.length === 0 && styles.listEmptyContent,

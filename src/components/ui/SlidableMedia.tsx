@@ -49,7 +49,9 @@ export const SlidableMedia: React.FC<SlidableMediaProps> = ({
   resizeMode = 'contain',
 }) => {
   const { colors, isDark } = useTheme();
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [containerWidth, setContainerWidth] = useState<number>(() =>
+    Math.round(Dimensions.get('window').width - 32)
+  );
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const scrollRef = useRef<ScrollView>(null);
 
